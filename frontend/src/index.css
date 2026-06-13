@@ -1,0 +1,177 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  min-height: 100vh;
+  background: #f5f5f4;
+  color: #1c1c1c;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #e5e5e5; }
+::-webkit-scrollbar-thumb { background: #aaa; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #e02929; }
+
+::selection { background: rgba(224, 41, 41, 0.18); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-up   { animation: fadeUp 0.3s ease forwards; }
+.slide-in  { animation: slideIn 0.3s ease forwards; }
+.animate-slide-in { animation: slideIn 0.3s ease forwards; }
+.animate-fade-up  { animation: fadeUp 0.3s ease forwards; }
+.animate-blink    { animation: blink 1s step-end infinite; }
+
+/* Simple card */
+.card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+/* Severity left borders */
+.card-critical { border-left: 3px solid #b91c1c; }
+.card-high     { border-left: 3px solid #e02929; }
+.card-medium   { border-left: 3px solid #d97706; }
+.card-low      { border-left: 3px solid #3b82f6; }
+.card-pass     { border-left: 3px solid #16a34a; }
+.card-error    { border-left: 3px solid #9ca3af; }
+
+/* Small severity tags */
+.tag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Space Mono', monospace;
+}
+.tag-critical { background: #fee2e2; color: #b91c1c; }
+.tag-high     { background: #fee2e2; color: #e02929; }
+.tag-medium   { background: #fef3c7; color: #b45309; }
+.tag-low      { background: #dbeafe; color: #1d4ed8; }
+.tag-pass     { background: #dcfce7; color: #15803d; }
+.tag-error    { background: #f3f4f6; color: #6b7280; }
+
+/* Code blocks */
+.code-block {
+  background: #1e1e1e;
+  border-radius: 4px;
+  padding: 12px 14px;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #e5e5e5;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* Grid bg — very subtle */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* --- 3D Flip Card Styles --- */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Glassmorphism card surfaces */
+.glass-card-front {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(229, 231, 235, 0.6);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+}
+
+.glass-card-back {
+  background: rgba(15, 23, 42, 0.96); /* Dark charcoal blue for back side to make it feel techy/secure */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #fff;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Animated border gradient */
+@keyframes borderGlow {
+  0% { border-color: rgba(59, 130, 246, 0.3); }
+  50% { border-color: rgba(224, 41, 41, 0.5); }
+  100% { border-color: rgba(59, 130, 246, 0.3); }
+}
+
+.animate-border-glow {
+  animation: borderGlow 5s linear infinite;
+}
+
+/* Load Entrance Stagger */
+@keyframes cardFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.card-stagger {
+  opacity: 0;
+  animation: cardFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .preserve-3d, .card-stagger, .animate-border-glow {
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+  .backface-hidden {
+    backface-visibility: visible !important;
+    -webkit-backface-visibility: visible !important;
+  }
+}
+
