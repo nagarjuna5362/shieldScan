@@ -157,12 +157,12 @@ function getGrade(score) {
 
 function getCategoryScores(results) {
   const cats = {
-    'Transport Security': { earned: 0, possible: 0 },
-    'HTTP Headers': { earned: 0, possible: 0 },
-    'CORS & API Security': { earned: 0, possible: 0 },
-    'Cookie & Session': { earned: 0, possible: 0 },
-    'File & Info Exposure': { earned: 0, possible: 0 },
-    'DNS & Network': { earned: 0, possible: 0 },
+    'Transport Security':    { earned: 0, possible: 0 },
+    'HTTP Headers':          { earned: 0, possible: 0 },
+    'CORS & API Security':   { earned: 0, possible: 0 },
+    'Cookie & Session':      { earned: 0, possible: 0 },
+    'File & Info Exposure':  { earned: 0, possible: 0 },
+    'DNS & Network':         { earned: 0, possible: 0 },
     'Rate Limiting & Abuse': { earned: 0, possible: 0 },
   };
 
@@ -170,17 +170,18 @@ function getCategoryScores(results) {
     const cat = cats[r.category];
     if (!cat) continue;
 
-    const pts = earnedPoints(r);
-    const weight = CHECK_WEIGHTS[r.checkId] || 0;
-    if (pts !== null && weight > 0) {
-      cat.earned += pts;
-      cat.possible += weight;
+    const result = earnedPoints(r);
+    if (result !== null) {
+      cat.earned   += result.pts;
+      cat.possible += result.possible;
     }
   }
 
   const scores = {};
   for (const [name, data] of Object.entries(cats)) {
-    scores[name] = data.possible > 0 ? Math.max(0, Math.min(100, Math.round((data.earned / data.possible) * 100))) : 100;
+    scores[name] = data.possible > 0
+      ? Math.max(0, Math.min(100, Math.round((data.earned / data.possible) * 100)))
+      : 100;
   }
   return scores;
 }

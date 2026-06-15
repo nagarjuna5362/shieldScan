@@ -17,13 +17,13 @@ const CAT_ICONS = {
 };
 
 const CAT_WEIGHTS = {
-  'Transport Security': 45,
-  'HTTP Headers': 29,
-  'CORS & API Security': 26,
-  'Cookie & Session': 11,
-  'File & Info Exposure': 21,
-  'DNS & Network': 7,
-  'Rate Limiting & Abuse': 10,
+  'Transport Security':    53,  // https_enforcement(12)+ssl_cert(12)+ssl_chain(6)+hsts(8)+tls(7)+mixed_content(8)
+  'HTTP Headers':          35,  // csp(10)+clickjacking(8)+content_type(5)+referrer(4)+permissions(4)+xss(4)
+  'CORS & API Security':   34,  // cors(12)+api_enum(5)+idor(8)+http_methods(4)+email_injection(5)
+  'Cookie & Session':      11,  // cookie_security(8)+session_in_url(3)
+  'File & Info Exposure':  21,  // sensitive_files(10)+server_disclosure(3)+dir_listing(5)+stack_trace(3)
+  'DNS & Network':         20,  // dns_security(4)+subdomain_takeover(3)+dkim(3)+caa(2)+subdomains(4)+open_ports(4)
+  'Rate Limiting & Abuse': 10,  // rate_limiting(5)+open_redirect(4)+security_txt(1)
 };
 
 function RadarChart({ categoryScores }) {
@@ -61,12 +61,12 @@ function RadarChart({ categoryScores }) {
 
   const axes = cats.map((cat, i) => {
     const end = polarToXY(i * angleStep, r);
-    const labelPt = polarToXY(i * angleStep, r + 22);
+    const labelPt = polarToXY(i * angleStep, r + 26);
     return { end, labelPt, cat, score: categoryScores[cat] || 0 };
   });
 
   return (
-    <svg viewBox="0 0 280 280" style={{ width: '100%', maxWidth: '280px', display: 'block', margin: '0 auto' }}>
+    <svg viewBox="0 0 280 290" style={{ width: '100%', maxWidth: '280px', display: 'block', margin: '0 auto' }}>
       {gridPolygons.map((pts, i) => (
         <polygon
           key={i}
@@ -104,13 +104,16 @@ function RadarChart({ categoryScores }) {
       {axes.map((ax, i) => {
         const score = ax.score;
         const color = score >= 75 ? '#16a34a' : score >= 55 ? '#d97706' : '#e02929';
-        const shortCat = ax.cat
-          .replace(' Security', '')
-          .replace(' & Session', '')
-          .replace(' & Info', '')
-          .replace(' & Abuse', '')
-          .replace('Rate Limiting', 'Rate Limit')
-          .replace('Transport', 'Transport');
+        const shortLabels = {
+          'Transport Security':    'Transport',
+          'HTTP Headers':          'Headers',
+          'CORS & API Security':   'CORS/API',
+          'Cookie & Session':      'Cookies',
+          'File & Info Exposure':  'Exposure',
+          'DNS & Network':         'DNS/Net',
+          'Rate Limiting & Abuse': 'Rate Limit',
+        };
+        const label = shortLabels[ax.cat] || ax.cat.split(' ')[0];
         return (
           <text
             key={i}
@@ -123,13 +126,14 @@ function RadarChart({ categoryScores }) {
             fontWeight="700"
             fontFamily="'Space Mono', monospace"
           >
-            {shortCat.length > 14 ? shortCat.slice(0, 13) + '…' : shortCat}
+            {label}
           </text>
         );
       })}
     </svg>
   );
 }
+
 
 export default function Results({ results, finalData, url, onRescan, dark, onToggleDark, prevScore, onContactClick }) {
   const [filter, setFilter] = useState('all');
@@ -494,8 +498,10 @@ export default function Results({ results, finalData, url, onRescan, dark, onTog
               <RadarChart categoryScores={categoryScores} />
             </div>
             <div style={{ flex: 1, minWidth: '240px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {Object.entries(categoryScores).map(([cat, sc], idx) => {
-                const catColor = sc >= 75 ? '#16a34a' : sc >= 55 ? '#d97706' : '#e02929';
+              {Object.entries(categoryScores || {}).map(([cat, sc], idx) => {
+                const safeScore = (typeof sc === 'number' && isFinite(sc)) ? sc : 0;
+                const catColor = safeScore >= 75 ? '#16a34a' : safeScore >= 55 ? '#d97706' : '#e02929';
+                const catWeight = CAT_WEIGHTS[cat];
                 return (
                   <div
                     key={cat}
@@ -508,17 +514,19 @@ export default function Results({ results, finalData, url, onRescan, dark, onTog
                       animationDelay: `${idx * 60}ms`,
                     }}
                   >
-                    <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
                         <span style={{ fontSize: '14px' }}>{CAT_ICONS[cat] || '🔍'}</span>
                         <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 700 }}>{cat}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
-                        <span style={{ fontSize: '10px', color: 'var(--text-faint)', fontFamily: "'Space Mono', monospace" }}>
-                          wt:{CAT_WEIGHTS[cat] || '?'}
-                        </span>
+                        {catWeight && (
+                          <span style={{ fontSize: '10px', color: 'var(--text-faint)', fontFamily: "'Space Mono', monospace" }}>
+                            wt:{catWeight}
+                          </span>
+                        )}
                         <span style={{ fontSize: '16px', fontWeight: 800, color: catColor, fontFamily: "'Space Mono', monospace" }}>
-                          {sc}%
+                          {safeScore}/100
                         </span>
                       </div>
                     </div>
@@ -526,7 +534,7 @@ export default function Results({ results, finalData, url, onRescan, dark, onTog
                       <div
                         style={{
                           height: '100%',
-                          width: `${sc}%`,
+                          width: `${Math.max(0, Math.min(100, safeScore))}%`,
                           background: catColor,
                           borderRadius: '3px',
                           transition: 'width 1s cubic-bezier(0.16,1,0.3,1)',
@@ -536,6 +544,7 @@ export default function Results({ results, finalData, url, onRescan, dark, onTog
                   </div>
                 );
               })}
+
             </div>
           </div>
 
@@ -551,8 +560,9 @@ export default function Results({ results, finalData, url, onRescan, dark, onTog
               fontFamily: "'Space Mono', monospace",
             }}
           >
-            ℹ️ PASS = full pts · WARNING = 50% · FAIL = 0%. Overall = weighted avg. ERROR checks excluded.
+            ℹ️ PASS = full pts · WARNING = 50% · FAIL = 0% · ERROR = 30% (unverifiable). Overall = weighted average across all checks.
           </div>
+
         </div>
 
         {fixPriorities && fixPriorities.length > 0 && (
