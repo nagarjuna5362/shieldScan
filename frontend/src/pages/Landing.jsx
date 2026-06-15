@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import FlipCard from '../components/FlipCard';
 
+const API_URL = import.meta.env.VITE_API_URL || '';
 const SAMPLES = ['github.com', 'wikipedia.org', 'bbc.co.uk', 'gov.in'];
 
 const CHECKS_DATA = [
@@ -484,8 +485,8 @@ export default function Landing({ onStart, dark, onToggleDark, onNavigate, onCon
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
           <button onClick={() => onNavigate('privacy')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '11px', cursor: 'pointer', fontFamily: "'Space Mono', monospace", textDecoration: 'underline', padding: 0 }}>Privacy Policy</button>
           <button onClick={() => onNavigate('terms')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '11px', cursor: 'pointer', fontFamily: "'Space Mono', monospace", textDecoration: 'underline', padding: 0 }}>Terms of Service</button>
-          <a href="http://localhost:3001/security.txt" target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: "'Space Mono', monospace" }}>security.txt</a>
-          <a href="http://localhost:3001/robots.txt" target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: "'Space Mono', monospace" }}>robots.txt</a>
+          <a href={`${API_URL}/security.txt`} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: "'Space Mono', monospace" }}>security.txt</a>
+          <a href={`${API_URL}/robots.txt`} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: "'Space Mono', monospace" }}>robots.txt</a>
         </div>
         <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: "'Space Mono', monospace" }}>
           made by <span style={{ color: 'var(--red)', fontWeight: 700 }}>nagarjuna's team</span>

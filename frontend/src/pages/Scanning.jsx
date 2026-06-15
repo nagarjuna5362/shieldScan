@@ -108,7 +108,11 @@ export default function Scanning({ url, onComplete, onCancel, dark, onToggleDark
           }
         }
       } catch (e) {
-        if (e.name !== 'AbortError') { setErr('Cannot reach backend. Is it running on port 3001?'); clearInterval(tick); }
+        if (e.name !== 'AbortError') {
+          const apiTarget = import.meta.env.VITE_API_URL || 'local server';
+          setErr(`Cannot reach backend (${apiTarget}). Please verify it is running.`);
+          clearInterval(tick);
+        }
       }
     })();
 

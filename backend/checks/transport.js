@@ -596,15 +596,23 @@ async function checkTlsVersion(parsedUrl) {
 
   const hostname = parsedUrl.hostname;
 
-  // Probe TLS 1.0 and TLS 1.1 support actively
-  const [supportsTls10, supportsTls11] = await Promise.all([
+  // Probe all TLS versions actively
+  const [supportsTls10, supportsTls11, supportsTls12, supportsTls13] = await Promise.all([
     testTlsHandshake(hostname, 'TLSv1'),
     testTlsHandshake(hostname, 'TLSv1.1'),
+    testTlsHandshake(hostname, 'TLSv1.2'),
+    testTlsHandshake(hostname, 'TLSv1.3'),
   ]);
 
   const activeVulnerabilities = [];
   if (supportsTls10) activeVulnerabilities.push('TLS 1.0');
   if (supportsTls11) activeVulnerabilities.push('TLS 1.1');
+  // SSLv3 and SSLv2 are deprecated and unsupported in modern clients (including Node.js),
+  // which means they are automatically blocked/unsupported. We list them as vulnerabilities if we fail.
+
+  const modernSupported = [];
+  if (supportsTls12) modernSupported.push('TLS 1.2');
+  if (supportsTls13) modernSupported.push('TLS 1.3');
 
   if (activeVulnerabilities.length > 0) {
     return {
@@ -612,11 +620,11 @@ async function checkTlsVersion(parsedUrl) {
       severity: 'HIGH',
       status: 'FAIL',
       description: `Server supports deprecated TLS versions: ${activeVulnerabilities.join(', ')}`,
-      technicalDetail: `Active probes accepted: ${activeVulnerabilities.join(' | ')}`,
+      technicalDetail: `Accepted: ${activeVulnerabilities.join(', ')}. Supported modern: ${modernSupported.join(', ') || 'None'}`,
       attackScenario:
         'Attackers can force a TLS connection to downgrade to TLS 1.0 or 1.1 (e.g. POODLE, BEAST, or SWEET32 attacks) and exploit known cryptographic vulnerabilities in those versions to decrypt session cookies or sensitive transaction data.',
       fix: {
-        description: 'Configure your web server to only support TLS 1.2 and TLS 1.3',
+        description: 'Configure your web server to only support TLS 1.2 and TLS 1.3, disabling TLS 1.0, TLS 1.1, SSLv2, and SSLv3.',
         code: `# Nginx config
 ssl_protocols TLSv1.2 TLSv1.3;
 
@@ -627,12 +635,30 @@ SSLProtocol -all +TLSv1.2 +TLSv1.3`,
     };
   }
 
+  if (modernSupported.length === 0) {
+    return {
+      ...base,
+      severity: 'CRITICAL',
+      status: 'FAIL',
+      description: 'Server does not support modern TLS versions (TLS 1.2 or TLS 1.3)',
+      technicalDetail: 'Handshakes using TLS 1.2 and TLS 1.3 failed or were rejected.',
+      attackScenario:
+        'Without support for TLS 1.2 or TLS 1.3, users cannot establish modern secure connections, leaving transactions exposed to eavesdropping or completely blocked by modern browsers.',
+      fix: {
+        description: 'Enable TLS 1.2 and TLS 1.3 protocols on your web server configuration.',
+        code: `ssl_protocols TLSv1.2 TLSv1.3;`,
+      },
+      points_deducted: 10,
+    };
+  }
+
+  // PASS: only modern TLS versions are supported, and deprecated versions are rejected.
   return {
     ...base,
     severity: 'INFO',
     status: 'PASS',
-    description: 'Server restricts SSL/TLS connection protocols to modern versions (TLS 1.2 and TLS 1.3)',
-    technicalDetail: 'Active probes: Handshakes using TLS 1.0 and TLS 1.1 were rejected.',
+    description: `Server restricts SSL/TLS connections to secure modern protocols: ${modernSupported.join(' and ')}`,
+    technicalDetail: `Accepted protocols: ${modernSupported.join(', ')}. Deprecated protocols (TLS 1.1, TLS 1.0, SSLv3, SSLv2) were successfully rejected.`,
     attackScenario: null,
     fix: null,
     points_deducted: 0,

@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
 const http = require('http');
@@ -40,6 +41,7 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
+app.use(compression());
 app.use(express.json({ limit: '2kb' }));
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -93,25 +95,25 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'ShieldScan backend running' });
 });
 
-app.post('/api/reports', generalLimiter, (req, res) => {
+app.post('/api/reports', generalLimiter, async (req, res) => {
   const { report } = req.body;
   if (!report) {
     return res.status(400).json({ error: 'Report data is required' });
   }
-  const uuid = saveReport(report);
+  const uuid = await saveReport(report);
   res.json({ uuid });
 });
 
-app.get('/api/reports/:uuid', generalLimiter, (req, res) => {
-  const report = getReport(req.params.uuid);
+app.get('/api/reports/:uuid', generalLimiter, async (req, res) => {
+  const report = await getReport(req.params.uuid);
   if (!report) {
     return res.status(404).json({ error: 'Report not found or expired' });
   }
   res.json(report);
 });
 
-app.get('/api/reports/:uuid/pdf', generalLimiter, (req, res) => {
-  const report = getReport(req.params.uuid);
+app.get('/api/reports/:uuid/pdf', generalLimiter, async (req, res) => {
+  const report = await getReport(req.params.uuid);
   if (!report) {
     return res.status(404).json({ error: 'Report not found or expired' });
   }
@@ -406,8 +408,12 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('CRITICAL UNHANDLED REJECTION:', reason);
 });
 
-app.listen(PORT, () => {
-  console.log(`\n🛡️  ShieldScan Backend running on http://localhost:${PORT}`);
-  console.log(`   Health: http://localhost:${PORT}/api/health`);
-  console.log(`   Scan:   POST http://localhost:${PORT}/api/scan\n`);
-});
+module.exports = app;
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n🛡️  ShieldScan Backend running on http://localhost:${PORT}`);
+    console.log(`   Health: http://localhost:${PORT}/api/health`);
+    console.log(`   Scan:   POST http://localhost:${PORT}/api/scan\n`);
+  });
+}
