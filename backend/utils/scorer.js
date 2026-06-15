@@ -1,160 +1,219 @@
-/**
- * scorer.js — Weight-based security scoring engine
- *
- * HOW IT WORKS:
- *   Every check has a fixed "weight" (points it can earn).
- *   PASS    → earns 100% of its weight
- *   WARNING → earns 50% of its weight
- *   FAIL    → earns 0% of its weight
- *   ERROR   → excluded from both numerator AND denominator
- *
- *   Overall Score   = sum(earned) / sum(possible) × 100
- *   Category Score  = same formula, but only within that category
- *
- *   This guarantees category scores are ALWAYS consistent with the
- *   overall score — no more "categories show 90% but overall is 30%".
- */
-
-// ─── Check weights (higher = more important) ─────────────────────────────────
 const CHECK_WEIGHTS = {
-  // Transport Security (total: 45)
-  https_enforcement:    15,
-  ssl_certificate:      15,
-  hsts:                  8,
-  tls_version:           7,
+  https_enforcement: 15,
+  ssl_certificate: 15,
+  ssl_chain: 8,
+  hsts: 8,
+  tls_version: 7,
 
-  // HTTP Headers (total: 29)
-  csp:                   8,
-  clickjacking:          8,
-  content_type_options:  4,
-  referrer_policy:       3,
-  permissions_policy:    3,
-  xss_protection:        3,
+  csp: 8,
+  clickjacking: 8,
+  content_type_options: 4,
+  referrer_policy: 3,
+  permissions_policy: 3,
+  xss_protection: 3,
 
-  // CORS & API Security (total: 26)
   cors_misconfiguration: 10,
-  api_enumeration:        5,
-  idor:                   8,
-  http_methods:           3,
+  api_enumeration: 5,
+  idor: 8,
+  http_methods: 3,
+  email_injection: 10,
 
-  // Cookie & Session (total: 11)
-  cookie_security:        8,
-  session_in_url:         3,
+  cookie_security: 8,
+  session_in_url: 3,
 
-  // File & Info Exposure (total: 21)
-  sensitive_files:       10,
-  server_disclosure:      3,
-  directory_listing:      5,
-  stack_trace:            3,
+  sensitive_files: 10,
+  server_disclosure: 3,
+  directory_listing: 5,
+  stack_trace: 3,
 
-  // DNS & Network (total: 7)
-  dns_security:           4,
-  subdomain_takeover:     3,
+  dns_security: 4,
+  subdomain_takeover: 3,
+  dkim_record: 5,
+  caa_record: 4,
+  subdomains: 10,
+  open_ports: 15,
 
-  // Rate Limiting & Abuse (total: 10)
-  rate_limiting:          5,
-  open_redirect:          4,
-  security_txt:           1,
+  rate_limiting: 5,
+  open_redirect: 4,
+  security_txt: 1,
+  mixed_content: 10,
 };
 
-// ─── How many points a result earns ──────────────────────────────────────────
+const CHECK_METRICS = {
+  https_enforcement: { severity: 'CRITICAL', cvss: 8.1, exploitability: 'Easy' },
+  ssl_certificate: { severity: 'CRITICAL', cvss: 8.1, exploitability: 'Easy' },
+  ssl_chain: { severity: 'HIGH', cvss: 7.5, exploitability: 'Easy' },
+  hsts: { severity: 'HIGH', cvss: 7.5, exploitability: 'Moderate' },
+  tls_version: { severity: 'HIGH', cvss: 7.5, exploitability: 'Hard' },
+  csp: { severity: 'HIGH', cvss: 7.2, exploitability: 'Moderate' },
+  clickjacking: { severity: 'HIGH', cvss: 7.2, exploitability: 'Easy' },
+  content_type_options: { severity: 'MEDIUM', cvss: 4.8, exploitability: 'Moderate' },
+  referrer_policy: { severity: 'LOW', cvss: 3.1, exploitability: 'Hard' },
+  permissions_policy: { severity: 'LOW', cvss: 3.1, exploitability: 'Hard' },
+  xss_protection: { severity: 'LOW', cvss: 3.1, exploitability: 'Moderate' },
+  cors_misconfiguration: { severity: 'CRITICAL', cvss: 9.3, exploitability: 'Easy' },
+  api_enumeration: { severity: 'HIGH', cvss: 7.5, exploitability: 'Easy' },
+  idor: { severity: 'CRITICAL', cvss: 9.3, exploitability: 'Easy' },
+  http_methods: { severity: 'HIGH', cvss: 7.5, exploitability: 'Moderate' },
+  email_injection: { severity: 'HIGH', cvss: 7.5, exploitability: 'Easy' },
+  cookie_security: { severity: 'HIGH', cvss: 7.5, exploitability: 'Moderate' },
+  session_in_url: { severity: 'HIGH', cvss: 7.5, exploitability: 'Easy' },
+  sensitive_files: { severity: 'CRITICAL', cvss: 9.8, exploitability: 'Easy' },
+  server_disclosure: { severity: 'LOW', cvss: 2.1, exploitability: 'Hard' },
+  directory_listing: { severity: 'HIGH', cvss: 7.5, exploitability: 'Easy' },
+  stack_trace: { severity: 'HIGH', cvss: 7.5, exploitability: 'Easy' },
+  dns_security: { severity: 'MEDIUM', cvss: 5.3, exploitability: 'Hard' },
+  subdomain_takeover: { severity: 'HIGH', cvss: 8.5, exploitability: 'Moderate' },
+  dkim_record: { severity: 'LOW', cvss: 3.5, exploitability: 'Hard' },
+  caa_record: { severity: 'LOW', cvss: 3.5, exploitability: 'Hard' },
+  subdomains: { severity: 'HIGH', cvss: 7.5, exploitability: 'Moderate' },
+  open_ports: { severity: 'CRITICAL', cvss: 9.8, exploitability: 'Easy' },
+  rate_limiting: { severity: 'MEDIUM', cvss: 5.3, exploitability: 'Easy' },
+  open_redirect: { severity: 'HIGH', cvss: 7.4, exploitability: 'Easy' },
+  security_txt: { severity: 'LOW', cvss: 1.5, exploitability: 'Hard' },
+  mixed_content: { severity: 'HIGH', cvss: 7.4, exploitability: 'Easy' },
+};
+
 function earnedPoints(result) {
   const weight = CHECK_WEIGHTS[result.checkId] || 0;
-  if (!weight) return null;          // unknown check — skip
+  if (!weight) return null;
 
   switch (result.status) {
-    case 'ERROR':   return null;     // cannot determine — exclude from score
-    case 'PASS':    return weight;   // full credit
-    case 'WARNING': return weight * 0.5; // half credit
-    case 'FAIL':    return 0;        // zero credit
-    default:        return null;
+    case 'ERROR':
+      return null;
+    case 'PASS':
+      return weight;
+    case 'WARNING':
+      return weight * 0.5;
+    case 'FAIL':
+      return 0;
+    default:
+      return null;
   }
 }
 
-// ─── Overall score ────────────────────────────────────────────────────────────
+function enrichResults(results) {
+  for (const r of results) {
+    const metrics = CHECK_METRICS[r.checkId] || { severity: 'INFO', cvss: 0.0, exploitability: 'Hard' };
+    if (r.status === 'PASS') {
+      r.severity = 'INFO';
+      r.cvss = 0.0;
+      r.exploitability = 'N/A';
+    } else {
+      r.severity = metrics.severity;
+      r.cvss = r.status === 'WARNING' ? Math.round(metrics.cvss * 0.5 * 10) / 10 : metrics.cvss;
+      r.exploitability = metrics.exploitability;
+    }
+  }
+  return results;
+}
+
 function calculateScore(results) {
-  let earned   = 0;
+  let earned = 0;
   let possible = 0;
   const summary = { critical: 0, high: 0, medium: 0, low: 0, pass: 0, error: 0 };
 
+  enrichResults(results);
+
   for (const r of results) {
-    // Tally summary counts
-    if      (r.status === 'PASS')                                  summary.pass++;
-    else if (r.status === 'ERROR')                                 summary.error++;
-    else if ((r.status === 'FAIL' || r.status === 'WARNING')) {
-      if      (r.severity === 'CRITICAL') summary.critical++;
-      else if (r.severity === 'HIGH')     summary.high++;
-      else if (r.severity === 'MEDIUM')   summary.medium++;
-      else                                summary.low++;
+    if (r.status === 'PASS') summary.pass++;
+    else if (r.status === 'ERROR') summary.error++;
+    else if (r.status === 'FAIL' || r.status === 'WARNING') {
+      if (r.severity === 'CRITICAL') summary.critical++;
+      else if (r.severity === 'HIGH') summary.high++;
+      else if (r.severity === 'MEDIUM') summary.medium++;
+      else summary.low++;
     }
 
-    // Tally score points
-    const pts    = earnedPoints(r);
+    const pts = earnedPoints(r);
     const weight = CHECK_WEIGHTS[r.checkId] || 0;
     if (pts !== null && weight > 0) {
-      earned   += pts;
+      earned += pts;
       possible += weight;
     }
   }
 
-  const score = possible > 0
-    ? Math.max(0, Math.min(100, Math.round((earned / possible) * 100)))
-    : 0;
+  const score = possible > 0 ? Math.max(0, Math.min(100, Math.round((earned / possible) * 100))) : 0;
 
   return { score, summary };
 }
 
-// ─── Grade lookup ─────────────────────────────────────────────────────────────
 function getGrade(score) {
-  if (score >= 90) return { grade: 'A', label: 'Excellent — Well secured',         emoji: '🟢' };
-  if (score >= 75) return { grade: 'B', label: 'Good — Minor issues present',       emoji: '🟡' };
-  if (score >= 55) return { grade: 'C', label: 'Needs Work — Fix issues soon',      emoji: '🟠' };
-  if (score >= 35) return { grade: 'D', label: 'Dangerous — Fix immediately',       emoji: '🔴' };
-  return              { grade: 'F', label: 'Critical — Do not use this site',       emoji: '💀' };
+  if (score >= 90) return { grade: 'A', label: 'Excellent — Well secured', emoji: '🟢' };
+  if (score >= 75) return { grade: 'B', label: 'Good — Minor issues present', emoji: '🟡' };
+  if (score >= 55) return { grade: 'C', label: 'Needs Work — Fix issues soon', emoji: '🟠' };
+  if (score >= 35) return { grade: 'D', label: 'Dangerous — Fix immediately', emoji: '🔴' };
+  return { grade: 'F', label: 'Critical — Do not use this site', emoji: '💀' };
 }
 
-// ─── Per-category scores (same math, scoped to category) ─────────────────────
 function getCategoryScores(results) {
   const cats = {
-    'Transport Security':    { earned: 0, possible: 0 },
-    'HTTP Headers':          { earned: 0, possible: 0 },
-    'CORS & API Security':   { earned: 0, possible: 0 },
-    'Cookie & Session':      { earned: 0, possible: 0 },
-    'File & Info Exposure':  { earned: 0, possible: 0 },
-    'DNS & Network':         { earned: 0, possible: 0 },
+    'Transport Security': { earned: 0, possible: 0 },
+    'HTTP Headers': { earned: 0, possible: 0 },
+    'CORS & API Security': { earned: 0, possible: 0 },
+    'Cookie & Session': { earned: 0, possible: 0 },
+    'File & Info Exposure': { earned: 0, possible: 0 },
+    'DNS & Network': { earned: 0, possible: 0 },
     'Rate Limiting & Abuse': { earned: 0, possible: 0 },
   };
 
   for (const r of results) {
-    const cat    = cats[r.category];
+    const cat = cats[r.category];
     if (!cat) continue;
 
-    const pts    = earnedPoints(r);
+    const pts = earnedPoints(r);
     const weight = CHECK_WEIGHTS[r.checkId] || 0;
     if (pts !== null && weight > 0) {
-      cat.earned   += pts;
+      cat.earned += pts;
       cat.possible += weight;
     }
   }
 
   const scores = {};
   for (const [name, data] of Object.entries(cats)) {
-    scores[name] = data.possible > 0
-      ? Math.max(0, Math.min(100, Math.round((data.earned / data.possible) * 100)))
-      : 100; // no checks ran in category → assume fine
+    scores[name] = data.possible > 0 ? Math.max(0, Math.min(100, Math.round((data.earned / data.possible) * 100))) : 100;
   }
   return scores;
 }
 
-// ─── Top attack vectors (worst findings for the summary warning) ──────────────
 function getTopAttackVectors(results) {
   const fails = results
-    .filter(r => (r.status === 'FAIL' || r.status === 'WARNING') && r.attackScenario)
+    .filter((r) => (r.status === 'FAIL' || r.status === 'WARNING') && r.attackScenario)
     .sort((a, b) => {
       const order = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
       return (order[a.severity] ?? 4) - (order[b.severity] ?? 4);
     });
-  return fails.slice(0, 3).map(r => r.attackScenario.split('.')[0]);
+  return fails.slice(0, 3).map((r) => r.attackScenario.split('.')[0]);
 }
 
-module.exports = { calculateScore, getGrade, getCategoryScores, getTopAttackVectors };
+function getFixPriorities(results) {
+  const sortedIssues = results
+    .filter((r) => (r.status === 'FAIL' || r.status === 'WARNING') && r.fix)
+    .sort((a, b) => {
+      const metricsA = CHECK_METRICS[a.checkId] || { cvss: 0 };
+      const metricsB = CHECK_METRICS[b.checkId] || { cvss: 0 };
+      return metricsB.cvss - metricsA.cvss;
+    });
+
+  return sortedIssues.slice(0, 3).map((r) => {
+    const metrics = CHECK_METRICS[r.checkId] || { cvss: 0, exploitability: 'Easy' };
+    return {
+      checkId: r.checkId,
+      name: r.name,
+      severity: r.severity,
+      cvss: metrics.cvss,
+      exploitability: metrics.exploitability,
+      recommendation: r.fix.description,
+      code: r.fix.code,
+    };
+  });
+}
+
+module.exports = {
+  calculateScore,
+  getGrade,
+  getCategoryScores,
+  getTopAttackVectors,
+  getFixPriorities,
+  enrichResults,
+};

@@ -1,12 +1,3 @@
-/**
- * headers.js — Checks 5-10: HTTP Security Headers
- * CHECK 5: Content Security Policy
- * CHECK 6: X-Frame-Options / Clickjacking
- * CHECK 7: X-Content-Type-Options
- * CHECK 8: Referrer-Policy
- * CHECK 9: Permissions-Policy
- * CHECK 10: X-XSS-Protection
- */
 
 const axios = require('axios');
 
@@ -23,7 +14,6 @@ async function fetchHeaders(url) {
   return response.headers;
 }
 
-// CHECK 5 — Content Security Policy
 async function checkCsp(parsedUrl) {
   const base = {
     checkId: 'csp',
@@ -88,7 +78,6 @@ Content-Security-Policy: script-src 'self' 'nonce-{random}';
   }
 }
 
-// CHECK 6 — X-Frame-Options / Clickjacking
 async function checkClickjacking(parsedUrl) {
   const base = {
     checkId: 'clickjacking',
@@ -147,7 +136,6 @@ res.setHeader('Content-Security-Policy', "frame-ancestors 'none';");`,
   }
 }
 
-// CHECK 7 — X-Content-Type-Options
 async function checkContentTypeOptions(parsedUrl) {
   const base = {
     checkId: 'content_type_options',
@@ -188,7 +176,6 @@ res.setHeader('X-Content-Type-Options', 'nosniff');`,
   }
 }
 
-// CHECK 8 — Referrer-Policy
 async function checkReferrerPolicy(parsedUrl) {
   const base = {
     checkId: 'referrer_policy',
@@ -241,7 +228,6 @@ res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');`,
   }
 }
 
-// CHECK 9 — Permissions-Policy
 async function checkPermissionsPolicy(parsedUrl) {
   const base = {
     checkId: 'permissions_policy',
@@ -282,7 +268,6 @@ res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), p
   }
 }
 
-// CHECK 10 — X-XSS-Protection
 async function checkXssProtection(parsedUrl) {
   const base = {
     checkId: 'xss_protection',

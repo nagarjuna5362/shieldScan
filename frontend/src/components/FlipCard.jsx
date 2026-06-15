@@ -1,20 +1,14 @@
 import React, { useState, useRef } from 'react';
 
-/**
- * Reusable 3D FlipCard Component
- * Displays a security check on the front, and flips to show details and disaster scenarios on the back.
- */
 export default function FlipCard({ icon, label, description, disaster, delayIndex }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const cardRef = useRef(null);
   const [tiltStyle, setTiltStyle] = useState({});
 
-  // Dynamic 3D tilt effect on mouse movement (desktop only)
   const handleMouseMove = (e) => {
     if (!cardRef.current || isFlipped) return;
     
-    // Prevent tilt on touch devices to avoid jitter
     if (e.pointerType === 'touch') return;
 
     const rect = cardRef.current.getBoundingClientRect();
@@ -24,13 +18,12 @@ export default function FlipCard({ icon, label, description, disaster, delayInde
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
     
-    // Calculate tilt angles (3 to 5 degrees max)
     const rotateX = ((centerY - y) / centerY) * 4;
     const rotateY = ((x - centerX) / centerX) * 4;
 
     setTiltStyle({
       transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`,
-      boxShadow: '0 12px 24px rgba(59, 130, 246, 0.25)', // Premium blue security glow
+      boxShadow: '0 12px 24px rgba(59, 130, 246, 0.25)', 
     });
   };
 
@@ -38,12 +31,10 @@ export default function FlipCard({ icon, label, description, disaster, delayInde
     setTiltStyle({});
   };
 
-  // Click/Tap toggles flip state
   const handleTap = (e) => {
     setIsFlipped(prev => !prev);
   };
 
-  // Keyboard accessibility: space or enter flips card
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -51,7 +42,6 @@ export default function FlipCard({ icon, label, description, disaster, delayInde
     }
   };
 
-  // Determine card styles based on current state (flipped vs tilting)
   const getInnerStyles = () => {
     const base = {
       width: '100%',
@@ -65,7 +55,7 @@ export default function FlipCard({ icon, label, description, disaster, delayInde
       return {
         ...base,
         transform: 'rotateY(180deg) translateY(-4px)',
-        boxShadow: '0 12px 24px rgba(224, 41, 41, 0.25)', // Warning red glow when showing disaster
+        boxShadow: '0 12px 24px rgba(224, 41, 41, 0.25)', 
       };
     }
 
@@ -79,7 +69,7 @@ export default function FlipCard({ icon, label, description, disaster, delayInde
     if (isFocused) {
       return {
         ...base,
-        boxShadow: '0 0 0 3px #3B82F6', // Accessibility focus ring
+        boxShadow: '0 0 0 3px #3B82F6', 
         transform: 'translateY(-4px)',
       };
     }
@@ -108,7 +98,6 @@ export default function FlipCard({ icon, label, description, disaster, delayInde
     >
       <div className="preserve-3d" style={getInnerStyles()}>
         
-        {/* FRONT SIDE (Icon & Title) */}
         <div
           className="backface-hidden glass-card-front animate-border-glow"
           style={{
@@ -124,7 +113,7 @@ export default function FlipCard({ icon, label, description, disaster, delayInde
         >
           <span style={{ fontSize: '28px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}>{icon}</span>
           <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#111', margin: 0, letterSpacing: '-0.01em' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
               {label}
             </h3>
             <span style={{
@@ -142,7 +131,6 @@ export default function FlipCard({ icon, label, description, disaster, delayInde
           </div>
         </div>
 
-        {/* BACK SIDE (Details & Disaster Quote) */}
         <div
           className="backface-hidden glass-card-back rotate-y-180"
           style={{

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 function color(s) {
   if (s >= 75) return '#16a34a';
@@ -32,7 +32,7 @@ export default function ScoreRing({ score, grade, size = 160 }) {
   return (
     <div style={{ position: 'relative', width: size, height: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
       <svg width={size} height={size} viewBox="0 0 140 140" style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={70} cy={70} r={r} fill="none" stroke="#e5e5e5" strokeWidth={10} />
+        <circle cx={70} cy={70} r={r} fill="none" stroke="var(--border)" strokeWidth={10} />
         <circle
           cx={70} cy={70} r={r} fill="none"
           stroke={stroke} strokeWidth={10} strokeLinecap="round"
@@ -42,7 +42,7 @@ export default function ScoreRing({ score, grade, size = 160 }) {
         />
       </svg>
       <div style={{ position: 'absolute', textAlign: 'center' }}>
-        <div style={{ fontSize: size * 0.18, fontWeight: 800, color: '#111', lineHeight: 1, fontFamily: "'Inter', sans-serif" }}>{grade}</div>
+        <div style={{ fontSize: size * 0.18, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1, fontFamily: "'Outfit', sans-serif" }}>{grade}</div>
         <div style={{ fontSize: size * 0.095, color: stroke, fontWeight: 700, fontFamily: "'Space Mono', monospace", lineHeight: 1.2 }}>{val}/100</div>
       </div>
     </div>

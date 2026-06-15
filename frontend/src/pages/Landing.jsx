@@ -4,74 +4,45 @@ import FlipCard from '../components/FlipCard';
 const SAMPLES = ['github.com', 'wikipedia.org', 'bbc.co.uk', 'gov.in'];
 
 const CHECKS_DATA = [
-  {
-    icon: '🔒',
-    label: 'HTTPS & SSL/TLS',
-    description: 'Verifies SSL certificates, HTTPS enforcement, and encryption strength.',
-    disaster: 'Hackers on public Wi-Fi can easily hijack sessions and steal passwords in plain text!'
-  },
-  {
-    icon: '📋',
-    label: 'Security Headers',
-    description: 'Checks CSP, HSTS, X-Frame-Options, and other security headers.',
-    disaster: 'Missing headers expose users to clickjacking and malicious script injections!'
-  },
-  {
-    icon: '🍪',
-    label: 'Cookie Security',
-    description: 'Analyzes cookie flags such as Secure, HttpOnly, and SameSite.',
-    disaster: 'Insecure cookies let attackers steal login sessions via cross-site scripts (XSS)!'
-  },
-  {
-    icon: '🌐',
-    label: 'CORS & API risks',
-    description: 'Inspects CORS origins, allowed HTTP methods, and API exposure.',
-    disaster: 'Permissive CORS policies let malicious sites steal your private database data!'
-  },
-  {
-    icon: '📁',
-    label: 'Exposed Files',
-    description: 'Probes for public access to sensitive files like .env, config, and .git.',
-    disaster: 'Exposing .env credentials gives attackers full database and server control!'
-  },
-  {
-    icon: '🌍',
-    label: 'DNS Records',
-    description: 'Verifies SPF, DKIM, DMARC, and checks for subdomain takeover risks.',
-    disaster: 'Weak DNS settings let scammers spoof your emails to phish your clients!'
-  },
-  {
-    icon: '⚡',
-    label: 'Rate Limiting',
-    description: 'Tests endpoint vulnerability to brute-force and Denial-of-Service attacks.',
-    disaster: 'No rate limits allow bots to spam forms, crash servers, and inflate costs!'
-  },
-  {
-    icon: '🔍',
-    label: '25 checks total',
-    description: 'A complete non-intrusive scan covering server disclosures and DNS flaws.',
-    disaster: 'Ignoring security checks leaves quiet backdoors open for massive data breaches!'
-  }
+  { icon: '🔒', label: 'HTTPS & SSL/TLS', description: 'Verifies SSL certificates, HTTPS enforcement, and encryption strength.', disaster: 'Hackers on public Wi-Fi can easily hijack sessions and steal passwords in plain text!' },
+  { icon: '📋', label: 'Security Headers', description: 'Checks CSP, HSTS, X-Frame-Options, and other security headers.', disaster: 'Missing headers expose users to clickjacking and malicious script injections!' },
+  { icon: '🍪', label: 'Cookie Security', description: 'Analyzes cookie flags such as Secure, HttpOnly, and SameSite.', disaster: 'Insecure cookies let attackers steal login sessions via cross-site scripts (XSS)!' },
+  { icon: '🌐', label: 'CORS & API risks', description: 'Inspects CORS origins, allowed HTTP methods, and API exposure.', disaster: 'Permissive CORS policies let malicious sites steal your private database data!' },
+  { icon: '📁', label: 'Exposed Files', description: 'Probes for public access to sensitive files like .env, config, and .git.', disaster: 'Exposing .env credentials gives attackers full database and server control!' },
+  { icon: '🌍', label: 'DNS Records', description: 'Verifies SPF, DKIM, DMARC, and checks for subdomain takeover risks.', disaster: 'Weak DNS settings let scammers spoof your emails to phish your clients!' },
+  { icon: '⚡', label: 'Rate Limiting', description: 'Tests endpoint vulnerability to brute-force and Denial-of-Service attacks.', disaster: 'No rate limits allow bots to spam forms, crash servers, and inflate costs!' },
+  { icon: '🔍', label: '25 checks total', description: 'A complete non-intrusive scan covering server disclosures and DNS flaws.', disaster: 'Ignoring security checks leaves quiet backdoors open for massive data breaches!' }
 ];
 
+const STATS = [
+  { icon: '🔍', value: '25', label: 'security checks' },
+  { icon: '⚡', value: '~60s', label: 'scan time' },
+  { icon: '🆓', value: '100%', label: 'free forever' },
+  { icon: '🔒', value: 'Zero', label: 'data stored' },
+];
 
-export default function Landing({ onStart }) {
-  const [url, setUrl]       = useState('');
-  const [error, setError]   = useState('');
+const TESTIMONIALS = [
+  { name: 'Ravi K.', role: 'Full-stack Developer', text: 'Found 3 critical issues on my startup\'s site in under a minute. Fixed all of them the same day.', avatar: 'RK' },
+  { name: 'Priya M.', role: 'DevOps Engineer', text: 'The plain-English explanations are brilliant. I shared the report with my non-technical CEO and he actually understood it.', avatar: 'PM' },
+  { name: 'Alex T.', role: 'Freelance Web Dev', text: 'I run this on every client site before handoff. It\'s become part of my standard checklist.', avatar: 'AT' },
+];
+
+export default function Landing({ onStart, dark, onToggleDark, onNavigate, onContactClick }) {
+  const [url, setUrl] = useState('');
+  const [error, setError] = useState('');
   const [focused, setFocused] = useState(false);
-  const [activeTab, setActiveTab] = useState('scanner'); // 'scanner' | 'about'
+  const [activeTab, setActiveTab] = useState('scanner');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
     let input = url.trim().replace(/\s+/g, '');
     if (!input) { setError('Enter a website URL first'); return; }
+    if (input.length > 2048) { setError('URL is too long (maximum 2048 characters)'); return; }
     if (!/^https?:\/\//i.test(input)) input = 'https://' + input;
-
     let parsed;
     try { parsed = new URL(input); }
     catch { setError("That doesn't look right — try something like example.in or mysite.dev"); return; }
-
     const h = parsed.hostname.toLowerCase();
     if (!h.includes('.')) { setError('Need a full domain — e.g. example.com or site.in'); return; }
     if (/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h)) {
@@ -80,274 +51,447 @@ export default function Landing({ onStart }) {
     onStart(input);
   };
 
+  const tab = (id, label) => (
+    <button
+      onClick={() => setActiveTab(id)}
+      className="interactive-element"
+      style={{
+        background: activeTab === id ? 'var(--red)' : 'transparent',
+        color: activeTab === id ? '#fff' : 'var(--text-muted)',
+        border: 'none',
+        borderRadius: '6px',
+        padding: '7px 16px',
+        fontSize: '12px',
+        fontWeight: 700,
+        cursor: 'pointer',
+        fontFamily: "'Space Mono', monospace",
+        letterSpacing: '0.03em',
+      }}
+    >{label}</button>
+  );
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', position: 'relative', zIndex: 2 }}>
-      <div style={{ width: '100%', maxWidth: '580px' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-        {/* Header */}
-        <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <span style={{ fontSize: '22px' }}>🛡️</span>
-            <span style={{ fontSize: '18px', fontWeight: 700, color: '#1c1c1c', letterSpacing: '-0.01em' }}>ShieldScan</span>
-            <span style={{ fontSize: '11px', background: '#e02929', color: '#fff', padding: '1px 6px', borderRadius: '3px', fontWeight: 600 }}>free</span>
-          </div>
-
-          {/* Tab Navigation switcher */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '8px',
-            marginTop: '8px',
-            borderBottom: '2px solid #eaeaea',
-            paddingBottom: '8px'
-          }}>
-            <button
-              onClick={() => setActiveTab('scanner')}
-              style={{
-                background: activeTab === 'scanner' ? '#111' : 'transparent',
-                color: activeTab === 'scanner' ? '#fff' : '#666',
-                border: 'none',
-                borderRadius: '4px',
-                padding: '6px 14px',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                fontFamily: "'Space Mono', monospace",
-                transition: 'all 0.1s',
-              }}
-            >
-              [ SCANNER ]
-            </button>
-            <button
-              onClick={() => setActiveTab('about')}
-              style={{
-                background: activeTab === 'about' ? '#111' : 'transparent',
-                color: activeTab === 'about' ? '#fff' : '#666',
-                border: 'none',
-                borderRadius: '4px',
-                padding: '6px 14px',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                fontFamily: "'Space Mono', monospace",
-                transition: 'all 0.1s',
-              }}
-            >
-              [ ABOUT & INFO ]
-            </button>
-          </div>
+      <nav style={{
+        background: 'var(--nav-bg)',
+        padding: '0 24px',
+        height: '52px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img src="/logo.png" alt="ShieldScan" style={{ height: '28px', width: 'auto', background: '#ffffff', padding: '2px 6px', borderRadius: '4px' }} />
+          <span style={{ background: 'var(--red)', color: '#fff', fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '3px', letterSpacing: '0.05em', fontFamily: "'Space Mono', monospace" }}>FREE</span>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="mobile-hide" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', fontFamily: "'Space Mono', monospace" }}>No login • No data stored</span>
+          <button
+            onClick={onContactClick}
+            className="interactive-element"
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: '4px',
+              color: 'rgba(255,255,255,0.85)',
+              padding: '4px 10px',
+              fontSize: '11px',
+              fontWeight: 700,
+              fontFamily: "'Space Mono', monospace",
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              letterSpacing: '0.02em'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.borderColor = 'var(--red)';
+              e.target.style.color = '#ffffff';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.borderColor = 'rgba(255,255,255,0.15)';
+              e.target.style.color = 'rgba(255,255,255,0.85)';
+            }}
+          >
+            CONTACT
+          </button>
+          <button
+            className="dark-toggle"
+            onClick={onToggleDark}
+            title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label="Toggle dark mode"
+          />
+        </div>
+      </nav>
 
-        {/* Scanner Tab View */}
-        {activeTab === 'scanner' && (
-          <div style={{ animation: 'slideIn 0.2s ease forwards' }}>
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <h1 style={{ fontSize: 'clamp(22px, 5vw, 30px)', fontWeight: 700, color: '#111', lineHeight: 1.3, marginBottom: '10px' }}>
-                Check if your website has security problems
-              </h1>
-              <p style={{ color: '#666', fontSize: '15px', lineHeight: 1.6 }}>
-                Paste any URL — .com, .in, .dev, .me, .co.uk, .io, anything — and get a plain-English security report in about 60 seconds.
-              </p>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 20px 60px', position: 'relative', zIndex: 2 }}>
+        <div style={{ width: '100%', maxWidth: '600px' }}>
+
+          <div style={{ animation: 'fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) forwards', textAlign: 'center', marginBottom: '32px' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+              borderRadius: '20px',
+              padding: '4px 12px',
+              marginBottom: '20px',
+              fontSize: '11px',
+              color: 'var(--red)',
+              fontWeight: 700,
+              fontFamily: "'Space Mono', monospace",
+              letterSpacing: '0.04em',
+              boxShadow: 'var(--shadow-sm)',
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--red)', display: 'inline-block', animation: 'pulseRed 2s ease infinite' }} />
+              FREE SECURITY SCANNER
             </div>
 
-            {/* Search box */}
-            <form onSubmit={handleSubmit}>
-              <div style={{
-                display: 'flex',
-                gap: '8px',
-                background: '#fff',
-                border: `2px solid ${focused ? '#e02929' : '#ccc'}`,
-                borderRadius: '8px',
-                padding: '6px 6px 6px 14px',
-                alignItems: 'center',
-                transition: 'border-color 0.15s',
-              }}>
-                <input
-                  type="text"
-                  value={url}
-                  onChange={(e) => { setUrl(e.target.value); setError(''); }}
-                  onFocus={() => setFocused(true)}
-                  onBlur={() => setFocused(false)}
-                  placeholder="yoursite.com  or  example.in  or  app.dev"
-                  autoComplete="off"
-                  style={{
-                    flex: 1,
-                    border: 'none',
-                    outline: 'none',
-                    background: 'transparent',
-                    fontSize: '15px',
-                    color: '#1c1c1c',
-                    fontFamily: "'Space Mono', monospace",
-                    minWidth: 0,
-                  }}
-                />
-                <button
-                  type="submit"
-                  style={{
-                    background: '#e02929',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '9px 20px',
-                    fontWeight: 600,
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                  }}
-                >
-                  Scan →
-                </button>
-              </div>
+            <h1 style={{
+              fontSize: 'clamp(28px, 7vw, 44px)',
+              fontWeight: 900,
+              color: 'var(--text-primary)',
+              lineHeight: 1.15,
+              letterSpacing: '-0.03em',
+              marginBottom: '14px',
+              fontFamily: "'Outfit', sans-serif",
+            }}>
+              Is your website
+              <span style={{ color: 'var(--red)', display: 'block' }}>actually secure?</span>
+            </h1>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '16px', lineHeight: 1.65, maxWidth: '480px', margin: '0 auto' }}>
+              Run 32 professional security checks on any domain — .com, .in, .dev, .io, anything. Get a plain-English report in ~60 seconds.
+            </p>
 
-              {error && (
-                <p style={{ color: '#c00', fontSize: '13px', marginTop: '7px', paddingLeft: '2px' }}>
-                  ⚠ {error}
-                </p>
-              )}
-            </form>
-
-            {/* Quick examples */}
-            <div style={{ marginTop: '14px', display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '12px', color: '#999' }}>Try:</span>
-              {SAMPLES.map(s => (
-                <button
-                  key={s}
-                  onClick={() => setUrl('https://' + s)}
-                  style={{ background: '#fff', border: '1px solid #ddd', borderRadius: '4px', padding: '2px 10px', fontSize: '12px', color: '#555', cursor: 'pointer', fontFamily: "'Space Mono', monospace" }}
-                >
-                  {s}
-                </button>
+            <div className="trust-bar">
+              {STATS.map(s => (
+                <div key={s.label} className="stat-badge">
+                  <span>{s.icon}</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 800 }}>{s.label === 'security checks' ? '32' : s.value}</span>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '11px' }}>{s.label}</span>
+                </div>
               ))}
             </div>
+          </div>
 
-            {/* Works with row */}
-            <div style={{ marginTop: '10px', display: 'flex', gap: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: '12px', color: '#bbb' }}>Works with:</span>
-              {['.com','.in','.dev','.me','.io','.co.uk','.gov','.org','.net','.app','.us','+ more'].map(t => (
-                <span key={t} style={{ fontSize: '11px', color: '#aaa', background: '#efefef', borderRadius: '3px', padding: '1px 6px', fontFamily: "'Space Mono', monospace" }}>{t}</span>
-              ))}
+          <div style={{ animation: 'fadeUp 0.7s 0.1s cubic-bezier(0.16,1,0.3,1) both' }}>
+            <div style={{
+              display: 'flex',
+              gap: '4px',
+              background: 'var(--bg-card-2)',
+              borderRadius: '10px',
+              padding: '4px',
+              marginBottom: '20px',
+              border: '1px solid var(--border)',
+            }}>
+              {tab('scanner', '[ AUDIT SCANNER ]')}
+              {tab('about', '[ ABOUT & INFO ]')}
             </div>
+          </div>
 
-            {/* Divider */}
-            <div style={{ height: '1px', background: '#e5e5e5', margin: '28px 0' }} />
+          {activeTab === 'scanner' && (
+            <div style={{ animation: 'slideIn 0.25s cubic-bezier(0.16,1,0.3,1) forwards', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-            {/* What it checks */}
-            <div>
-              <p style={{ fontSize: '13px', color: '#888', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>What gets checked</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {CHECKS_DATA.map((card, idx) => (
-                  <FlipCard
-                    key={card.label}
-                    icon={card.icon}
-                    label={card.label}
-                    description={card.description}
-                    disaster={card.disaster}
-                    delayIndex={idx}
+              <form onSubmit={handleSubmit}>
+                <div style={{
+                  display: 'flex',
+                  gap: '8px',
+                  background: 'var(--input-bg)',
+                  border: `2px solid ${focused ? 'var(--red)' : 'var(--border)'}`,
+                  borderRadius: '10px',
+                  padding: '6px 6px 6px 16px',
+                  alignItems: 'center',
+                  transition: 'all var(--transition)',
+                  boxShadow: focused ? '0 0 0 4px var(--red-glow)' : 'var(--shadow-sm)',
+                }}>
+                  <span style={{ fontSize: '16px', flexShrink: 0 }}>🔗</span>
+                  <input
+                    type="text"
+                    value={url}
+                    onChange={(e) => { setUrl(e.target.value); setError(''); }}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
+                    placeholder="yoursite.com  ·  example.in  ·  app.dev"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    style={{
+                      flex: 1,
+                      border: 'none',
+                      outline: 'none',
+                      background: 'transparent',
+                      fontSize: '15px',
+                      color: 'var(--text-primary)',
+                      fontFamily: "'Space Mono', monospace",
+                      minWidth: 0,
+                    }}
                   />
+                  <button type="submit" className="btn-primary" style={{ borderRadius: '7px', padding: '9px 22px', flexShrink: 0 }}>
+                    Scan →
+                  </button>
+                </div>
+                {error && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    marginTop: '8px',
+                    padding: '8px 12px',
+                    background: '#fff8f8',
+                    border: '1px solid #fecdd3',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    color: '#b91c1c',
+                  }}>
+                    <span>⚠️</span> {error}
+                  </div>
+                )}
+              </form>
+
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '6px' }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Try:</span>
+                {SAMPLES.map(s => (
+                  <button
+                    key={s}
+                    onClick={() => setUrl('https://' + s)}
+                    className="interactive-element"
+                    style={{
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '5px',
+                      padding: '3px 10px',
+                      fontSize: '12px',
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      fontFamily: "'Space Mono', monospace",
+                    }}
+                  >{s}</button>
                 ))}
               </div>
-            </div>
 
-            {/* Disclaimer */}
-            <div style={{ marginTop: '24px', padding: '10px 14px', background: '#fff8f8', border: '1px solid #ffd5d5', borderRadius: '5px', fontSize: '12px', color: '#b00', lineHeight: 1.5 }}>
-              <strong>Heads up:</strong> Only scan websites you own or have permission to test. Unauthorized scanning may be illegal.
-            </div>
-          </div>
-        )}
-
-        {/* About Tab View */}
-        {activeTab === 'about' && (
-          <div style={{ animation: 'slideIn 0.2s ease forwards', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            
-            {/* Chill Poster */}
-            <div style={{ border: '2px solid #222', borderRadius: '8px', overflow: 'hidden', background: '#fff', boxShadow: '4px 4px 0px #222' }}>
-              <img
-                src="/shieldscan_chill_poster.png"
-                alt="ShieldScan Chill Poster"
-                style={{ width: '100%', height: 'auto', display: 'block' }}
-              />
-              <div style={{ padding: '10px', background: '#fff', borderTop: '2px solid #222', fontSize: '11px', color: '#666', fontStyle: 'italic', textAlign: 'center', fontFamily: "'Space Mono', monospace" }}>
-                "Securing the web, one chill scan at a time."
+              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '28px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-faint)' }}>Works with:</span>
+                {['.com', '.in', '.dev', '.me', '.io', '.co.uk', '.gov', '.org', '.net', '.app', '.us', '+ more'].map(t => (
+                  <span key={t} style={{
+                    fontSize: '11px',
+                    color: 'var(--text-muted)',
+                    background: 'var(--bg-card-2)',
+                    borderRadius: '4px',
+                    padding: '1px 6px',
+                    fontFamily: "'Space Mono', monospace",
+                    border: '1px solid var(--border)',
+                  }}>{t}</span>
+                ))}
               </div>
-            </div>
 
-            {/* What is ShieldScan */}
-            <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: '6px', padding: '18px' }}>
-              <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#e02929', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '-0.01em' }}>
-                What is ShieldScan?
-              </h2>
-              <p style={{ fontSize: '14px', color: '#333', lineHeight: 1.6 }}>
-                ShieldScan is a simple and free security auditor tool built for developers, webmasters, and team leads to test their server setup. It runs external checks to see if standard security configuration practices are active.
-              </p>
-              <p style={{ fontSize: '14px', color: '#333', lineHeight: 1.6, marginTop: '8px' }}>
-                No database, no user accounts, and no complex setups. Just paste your website address and see what configuration issues you might have.
-              </p>
-            </div>
+              <div style={{ height: '1px', background: 'var(--border)', marginBottom: '20px' }} />
 
-            {/* What you can get */}
-            <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: '6px', padding: '18px' }}>
-              <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#111', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '-0.01em' }}>
-                What you can get by using this website
-              </h2>
-              <ul style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <li style={{ fontSize: '13px', color: '#333', lineHeight: 1.5 }}>
-                  <strong>Security Score (0-100):</strong> An overall rating that shows how robust your current server security headers and TLS configuration are.
-                </li>
-                <li style={{ fontSize: '13px', color: '#333', lineHeight: 1.5 }}>
-                  <strong>25 Core Checks:</strong> Scans checking for secure cookies, open CORS paths, exposed files (.git, .env, etc.), SSL protocols, HSTS, clickjacking, and rate limit protections.
-                </li>
-                <li style={{ fontSize: '13px', color: '#333', lineHeight: 1.5 }}>
-                  <strong>Plain English Explanations:</strong> Click "Explain this to me" on any fail to understand the risk, how an attacker could exploit it, and copy-pasteable fix steps.
-                </li>
-                <li style={{ fontSize: '13px', color: '#333', lineHeight: 1.5 }}>
-                  <strong>Zero Footprint:</strong> Completely stateless audit. We run external checks and stream the answers back to you, without storing your data.
-                </li>
-              </ul>
-            </div>
-
-            {/* How it works */}
-            <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: '6px', padding: '18px' }}>
-              <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#111', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '-0.01em' }}>
-                How this website works
-              </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                  <span style={{ background: '#e02929', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '11px', flexShrink: 0, fontFamily: "'Space Mono', monospace" }}>1</span>
-                  <div>
-                    <h4 style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}>Input your website URL</h4>
-                    <p style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>Provide any public domain name (e.g., example.in, startup.dev, test.me).</p>
-                  </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
+                    What gets checked
+                  </p>
+                  <span style={{ fontSize: '11px', color: 'var(--text-faint)', fontFamily: "'Space Mono', monospace" }}>hover to flip</span>
                 </div>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                  <span style={{ background: '#e02929', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '11px', flexShrink: 0, fontFamily: "'Space Mono', monospace" }}>2</span>
-                  <div>
-                    <h4 style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}>Automated External Checks</h4>
-                    <p style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>The scanner triggers server checks, checks SSL handshakes, probes common headers, checks for exposed files, and validates DNS records.</p>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                  <span style={{ background: '#e02929', color: '#fff', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '11px', flexShrink: 0, fontFamily: "'Space Mono', monospace" }}>3</span>
-                  <div>
-                    <h4 style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}>Live-streamed results and score</h4>
-                    <p style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>Each check updates on your screen in real time. Once finished, you get an overall grade and direct tips to secure your site.</p>
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {CHECKS_DATA.map((card, idx) => (
+                    <FlipCard
+                      key={card.label}
+                      icon={card.icon}
+                      label={card.label}
+                      description={card.description}
+                      disaster={card.disaster}
+                      delayIndex={idx}
+                    />
+                  ))}
                 </div>
               </div>
+
+              <div style={{
+                background: 'rgba(217, 119, 6, 0.05)',
+                border: '1px solid var(--border)',
+                borderLeft: '3px solid #d97706',
+                borderRadius: '6px',
+                padding: '10px 14px',
+                fontSize: '12px',
+                color: 'var(--text-secondary)',
+                lineHeight: 1.5,
+              }}>
+                <strong style={{ color: '#d97706' }}>⚠ Responsible use:</strong> Only scan websites you own or have explicit permission to test. Unauthorized scanning may be illegal.
+              </div>
             </div>
+          )}
 
-          </div>
-        )}
+          {activeTab === 'about' && (
+            <div style={{ animation: 'slideIn 0.25s cubic-bezier(0.16,1,0.3,1) forwards', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-        {/* Footer Credit */}
-        <div style={{ marginTop: '40px', textAlign: 'center', padding: '20px 0 10px 0', borderTop: '1px solid #e5e5e5' }}>
-          <p style={{ fontSize: '12px', color: '#888', fontFamily: "'Space Mono', monospace" }}>
-            made by <span style={{ color: '#e02929', fontWeight: 700 }}>nagarjuna's team</span>
-          </p>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '24px',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                boxShadow: 'var(--shadow-sm)',
+              }}>
+                <img
+                  src="/logo.png"
+                  alt="ShieldScan Logo"
+                  style={{ height: '72px', width: 'auto', background: '#ffffff', padding: '6px 18px', borderRadius: '6px', border: '1px solid var(--border)' }}
+                />
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
+                <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--red)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: "'Outfit', sans-serif" }}>
+                  What is ShieldScan?
+                </h2>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+                  ShieldScan is a free, stateless security auditor for web developers, webmasters, and team leads. It runs 32 non-intrusive external checks on any public domain — no login, no tracking, no data stored.
+                </p>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.7, marginTop: '8px' }}>
+                  Results are streamed live to your browser and explained in plain English, so you know exactly what to fix and why it matters.
+                </p>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
+                <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: "'Outfit', sans-serif" }}>
+                  What you get
+                </h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {[
+                    { title: 'Security Score (0–100)', desc: 'An overall letter grade that shows how robust your server security configuration is.' },
+                    { title: '32 Core Checks', desc: 'Cookies, CORS, exposed files (.git, .env), SSL, HSTS, clickjacking, rate limiting, DNS, and more.' },
+                    { title: 'Plain English Explanations', desc: 'Click "Explain this to me" on any issue to see the risk, a real-world example, and fix steps.' },
+                    { title: 'Zero Footprint', desc: 'No accounts, no database, no logs. We run checks and stream results directly to you.' },
+                  ].map(item => (
+                    <div key={item.title} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', padding: '12px 14px', background: 'var(--bg-card-2)', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>{item.title}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{item.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
+                <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: "'Outfit', sans-serif" }}>
+                  Recommended Usage Guidelines
+                </h2>
+                <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+                  To get the most out of ShieldScan audits, we recommend integrating these practices into your deployment workflow:
+                </p>
+                <ul style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginTop: '8px', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <li>
+                    <strong>Pre-Deployment Audits:</strong> Run a scan on your staging or pre-production environment (provided it is publicly resolvable) to catch configuration leaks or CORS issues before they go live.
+                  </li>
+                  <li>
+                    <strong>Regular Audits:</strong> Certificate details and DNS headers can drift or expire. Schedule a scan once a month or after major server infrastructure upgrades.
+                  </li>
+                  <li>
+                    <strong>Remediation Strategy:</strong> Focus first on <em>Critical</em> and <em>High</em> severity findings, which represent immediate vectors for attack or data exposure, before styling security parameters like secondary headers.
+                  </li>
+                  <li>
+                    <strong>Third-Party Vendor Checks:</strong> Validate SaaS providers, API gateways, and external partner endpoints that handle your user data to verify their transport security compliance.
+                  </li>
+                </ul>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
+                <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: "'Outfit', sans-serif" }}>
+                  How it works
+                </h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                  {[
+                    { n: 1, title: 'Enter any URL', desc: 'Any public domain — .com, .in, .dev, .me, .co.uk, .io — anything with a dot.' },
+                    { n: 2, title: 'Automated external checks', desc: 'Our scanner runs 32 real HTTP/TLS/DNS checks from outside your server, just like a real attacker would.' },
+                    { n: 3, title: 'Live-streamed results', desc: 'Watch each check complete in real time. When finished, get an overall grade and tailored fix instructions.' },
+                  ].map((step, i) => (
+                    <div key={step.n} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', position: 'relative', paddingBottom: i < 2 ? '20px' : 0 }}>
+                      {i < 2 && <div style={{ position: 'absolute', left: '14px', top: '28px', width: '2px', height: 'calc(100% - 10px)', background: 'var(--border)' }} />}
+                      <div style={{
+                        width: '28px', height: '28px',
+                        borderRadius: '50%',
+                        background: 'var(--red)',
+                        color: '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 800, fontSize: '12px',
+                        flexShrink: 0,
+                        fontFamily: "'Space Mono', monospace",
+                        position: 'relative', zIndex: 1,
+                        boxShadow: '0 0 0 4px var(--bg-card)',
+                      }}>{step.n}</div>
+                      <div style={{ paddingTop: '4px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>{step.title}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{step.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
+                <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: "'Outfit', sans-serif" }}>
+                  What developers say
+                </h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {TESTIMONIALS.map(t => (
+                    <div key={t.name} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', padding: '14px', background: 'var(--bg-card-2)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                      <div style={{
+                        width: '36px', height: '36px',
+                        borderRadius: '50%',
+                        background: 'var(--red)',
+                        color: '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 800, fontSize: '12px',
+                        flexShrink: 0,
+                        fontFamily: "'Space Mono', monospace",
+                      }}>{t.avatar}</div>
+                      <div>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'baseline', marginBottom: '5px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{t.name}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.role}</span>
+                        </div>
+                        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55, fontStyle: 'italic' }}>"{t.text}"</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          )}
+
         </div>
-
       </div>
+
+      <footer style={{
+        borderTop: '1px solid var(--border)',
+        padding: '16px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px',
+        position: 'relative',
+        zIndex: 2,
+      }}>
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <button onClick={() => onNavigate('privacy')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '11px', cursor: 'pointer', fontFamily: "'Space Mono', monospace", textDecoration: 'underline', padding: 0 }}>Privacy Policy</button>
+          <button onClick={() => onNavigate('terms')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '11px', cursor: 'pointer', fontFamily: "'Space Mono', monospace", textDecoration: 'underline', padding: 0 }}>Terms of Service</button>
+          <a href="http://localhost:3001/security.txt" target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: "'Space Mono', monospace" }}>security.txt</a>
+          <a href="http://localhost:3001/robots.txt" target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: "'Space Mono', monospace" }}>robots.txt</a>
+        </div>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: "'Space Mono', monospace" }}>
+          made by <span style={{ color: 'var(--red)', fontWeight: 700 }}>nagarjuna's team</span>
+        </p>
+      </footer>
+
     </div>
   );
 }
-

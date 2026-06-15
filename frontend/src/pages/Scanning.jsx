@@ -1,44 +1,55 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const ALL_CHECKS = [
-  { id: 'https_enforcement',   name: 'HTTPS Enforcement',          category: 'Transport' },
-  { id: 'ssl_certificate',     name: 'SSL/TLS Certificate',         category: 'Transport' },
-  { id: 'hsts',                name: 'HSTS Header',                 category: 'Transport' },
-  { id: 'tls_version',         name: 'TLS Version',                 category: 'Transport' },
-  { id: 'csp',                 name: 'Content Security Policy',     category: 'Headers' },
-  { id: 'clickjacking',        name: 'Clickjacking Protection',     category: 'Headers' },
-  { id: 'content_type_options',name: 'Content-Type Sniffing',       category: 'Headers' },
-  { id: 'referrer_policy',     name: 'Referrer Policy',             category: 'Headers' },
-  { id: 'permissions_policy',  name: 'Permissions Policy',          category: 'Headers' },
-  { id: 'xss_protection',      name: 'XSS Protection',              category: 'Headers' },
+  { id: 'https_enforcement',    name: 'HTTPS Enforcement',         category: 'Transport' },
+  { id: 'ssl_certificate',      name: 'SSL/TLS Certificate',        category: 'Transport' },
+  { id: 'hsts',                 name: 'HSTS Header',                category: 'Transport' },
+  { id: 'tls_version',          name: 'TLS Version',                category: 'Transport' },
+  { id: 'csp',                  name: 'Content Security Policy',    category: 'Headers' },
+  { id: 'clickjacking',         name: 'Clickjacking Protection',    category: 'Headers' },
+  { id: 'content_type_options', name: 'Content-Type Sniffing',      category: 'Headers' },
+  { id: 'referrer_policy',      name: 'Referrer Policy',            category: 'Headers' },
+  { id: 'permissions_policy',   name: 'Permissions Policy',         category: 'Headers' },
+  { id: 'xss_protection',       name: 'XSS Protection',             category: 'Headers' },
   { id: 'cors_misconfiguration',name: 'CORS Policy',                category: 'CORS & API' },
-  { id: 'api_enumeration',     name: 'API Enumeration',             category: 'CORS & API' },
-  { id: 'idor',                name: 'IDOR Detection',              category: 'CORS & API' },
-  { id: 'http_methods',        name: 'HTTP Methods',                category: 'CORS & API' },
-  { id: 'cookie_security',     name: 'Cookie Flags',                category: 'Cookies' },
-  { id: 'session_in_url',      name: 'Session in URL',              category: 'Cookies' },
-  { id: 'sensitive_files',     name: 'Sensitive Files',             category: 'Exposure' },
-  { id: 'server_disclosure',   name: 'Server Info Leak',            category: 'Exposure' },
-  { id: 'directory_listing',   name: 'Directory Listing',           category: 'Exposure' },
-  { id: 'stack_trace',         name: 'Error Message Leak',          category: 'Exposure' },
-  { id: 'dns_security',        name: 'DNS Records (SPF/DMARC)',     category: 'DNS' },
-  { id: 'subdomain_takeover',  name: 'Subdomain Takeover',          category: 'DNS' },
-  { id: 'rate_limiting',       name: 'Rate Limiting',               category: 'Abuse' },
-  { id: 'open_redirect',       name: 'Open Redirect',               category: 'Abuse' },
-  { id: 'security_txt',        name: 'Security.txt',                category: 'Abuse' },
+  { id: 'api_enumeration',      name: 'API Enumeration',            category: 'CORS & API' },
+  { id: 'idor',                 name: 'IDOR Detection',             category: 'CORS & API' },
+  { id: 'http_methods',         name: 'HTTP Methods',               category: 'CORS & API' },
+  { id: 'cookie_security',      name: 'Cookie Flags',               category: 'Cookies' },
+  { id: 'session_in_url',       name: 'Session in URL',             category: 'Cookies' },
+  { id: 'sensitive_files',      name: 'Sensitive Files',            category: 'Exposure' },
+  { id: 'server_disclosure',    name: 'Server Info Leak',           category: 'Exposure' },
+  { id: 'directory_listing',    name: 'Directory Listing',          category: 'Exposure' },
+  { id: 'stack_trace',          name: 'Error Message Leak',         category: 'Exposure' },
+  { id: 'dns_security',         name: 'DNS Records (SPF/DMARC)',    category: 'DNS' },
+  { id: 'subdomain_takeover',   name: 'Subdomain Takeover',         category: 'DNS' },
+  { id: 'rate_limiting',        name: 'Rate Limiting',              category: 'Abuse' },
+  { id: 'open_redirect',        name: 'Open Redirect',              category: 'Abuse' },
+  { id: 'security_txt',         name: 'Security.txt',               category: 'Abuse' },
 ];
 
 const CATEGORIES = ['Transport','Headers','CORS & API','Cookies','Exposure','DNS','Abuse'];
 
-function statusIcon(s) {
-  if (s === 'running') return <span style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid #e02929', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite', verticalAlign: 'middle' }} />;
-  if (s === 'pass')    return <span style={{ color: '#16a34a', fontWeight: 700 }}>✓</span>;
-  if (s === 'fail')    return <span style={{ color: '#e02929', fontWeight: 700 }}>✗</span>;
-  if (s === 'error')   return <span style={{ color: '#aaa' }}>?</span>;
-  return <span style={{ color: '#ccc' }}>·</span>;
+const CAT_ICONS = {
+  Transport: '🔒', Headers: '📋', 'CORS & API': '🌐',
+  Cookies: '🍪', Exposure: '📁', DNS: '🌍', Abuse: '⚡',
+};
+
+function StatusIcon({ s }) {
+  if (s === 'running') return (
+    <span style={{
+      display: 'inline-block', width: 12, height: 12,
+      border: '2px solid var(--red)', borderTopColor: 'transparent',
+      borderRadius: '50%', animation: 'spin 0.7s linear infinite',
+    }} />
+  );
+  if (s === 'pass')  return <span style={{ color: '#16a34a', fontWeight: 700, fontSize: '14px' }}>✓</span>;
+  if (s === 'fail')  return <span style={{ color: 'var(--red)', fontWeight: 700, fontSize: '14px' }}>✗</span>;
+  if (s === 'error') return <span style={{ color: 'var(--text-faint)' }}>?</span>;
+  return <span className="skeleton" style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%' }} />;
 }
 
-export default function Scanning({ url, onComplete, onCancel }) {
+export default function Scanning({ url, onComplete, onCancel, dark, onToggleDark, onContactClick }) {
   const [statuses, setStatuses] = useState({});
   const [done, setDone]         = useState(0);
   const [elapsed, setElapsed]   = useState(0);
@@ -54,7 +65,6 @@ export default function Scanning({ url, onComplete, onCancel }) {
 
     const ctrl = new AbortController();
 
-    // Animate "running" markers
     const runAnim = setInterval(() => {
       setStatuses(prev => {
         const next = { ...prev };
@@ -108,91 +118,183 @@ export default function Scanning({ url, onComplete, onCancel }) {
   const pct = Math.round((done/25)*100);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '32px 16px', position: 'relative', zIndex: 2 }}>
-      <div style={{ width: '100%', maxWidth: '660px' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-        {/* Top bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '16px' }}>🛡️</span>
-            <span style={{ fontWeight: 700, fontSize: '15px', color: '#111' }}>ShieldScan</span>
-          </div>
+      <nav style={{
+        background: 'var(--nav-bg)',
+        padding: '0 24px',
+        height: '52px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img src="/logo.png" alt="ShieldScan" style={{ height: '28px', width: 'auto', background: '#ffffff', padding: '2px 6px', borderRadius: '4px' }} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={onContactClick}
+            className="interactive-element"
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: '4px',
+              color: 'rgba(255,255,255,0.85)',
+              padding: '4px 10px',
+              fontSize: '11px',
+              fontWeight: 700,
+              fontFamily: "'Space Mono', monospace",
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              letterSpacing: '0.02em'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.borderColor = 'var(--red)';
+              e.target.style.color = '#ffffff';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.borderColor = 'rgba(255,255,255,0.15)';
+              e.target.style.color = 'rgba(255,255,255,0.85)';
+            }}
+          >
+            CONTACT
+          </button>
+          <button
+            className="dark-toggle"
+            onClick={onToggleDark}
+            title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label="Toggle dark mode"
+          />
           <button
             onClick={onCancel}
-            style={{ background: 'none', border: '1px solid #ccc', borderRadius: '5px', padding: '4px 12px', fontSize: '13px', color: '#666', cursor: 'pointer' }}
+            className="btn-ghost"
+            style={{ color: 'rgba(255,255,255,0.7)', borderColor: 'rgba(255,255,255,0.15)', fontSize: '12px', padding: '5px 14px' }}
           >
-            Cancel
+            ✕ Cancel
           </button>
         </div>
+      </nav>
 
-        {/* Target + progress */}
-        <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: '7px', padding: '18px 20px', marginBottom: '12px' }}>
-          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '13px', color: '#555', marginBottom: '14px', wordBreak: 'break-all' }}>
-            <span style={{ color: '#e02929' }}>$</span> scanning <strong style={{ color: '#111' }}>{url}</strong>
-          </div>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '32px 16px 60px', position: 'relative', zIndex: 2 }}>
+        <div style={{ width: '100%', maxWidth: '660px' }}>
 
-          {/* Progress bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#888', marginBottom: '6px', fontFamily: "'Space Mono', monospace" }}>
-            <span>{done} / 25 checks done</span>
-            <span>{elapsed}s elapsed</span>
-          </div>
-          <div style={{ height: '6px', background: '#eee', borderRadius: '4px', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${pct}%`, background: '#e02929', borderRadius: '4px', transition: 'width 0.4s ease' }} />
-          </div>
-          <div style={{ fontSize: '12px', color: '#e02929', textAlign: 'right', marginTop: '4px', fontFamily: "'Space Mono', monospace" }}>{pct}%</div>
-
-          {err && (
-            <div style={{ marginTop: '12px', padding: '10px 12px', background: '#fff0f0', border: '1px solid #fdd', borderRadius: '5px', fontSize: '13px', color: '#c00' }}>
-              Error: {err}
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '20px 22px', marginBottom: '14px', boxShadow: 'var(--shadow-md)' }}>
+            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', wordBreak: 'break-all' }}>
+              <span style={{ color: 'var(--red)' }}>$ </span>
+              scanning <strong style={{ color: 'var(--text-primary)' }}>{url}</strong>
             </div>
-          )}
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px', fontFamily: "'Space Mono', monospace" }}>
+              <span>{done} / 25 checks done</span>
+              <span>{elapsed}s elapsed</span>
+            </div>
+
+            <div style={{ height: '7px', background: 'var(--border)', borderRadius: '4px', overflow: 'hidden', marginBottom: '6px' }}>
+              <div
+                className="shimmer-bar"
+                style={{ height: '100%', width: `${pct}%`, borderRadius: '4px', transition: 'width 0.5s cubic-bezier(0.16,1,0.3,1)' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-faint)', fontFamily: "'Space Mono', monospace" }}>
+                {pct < 100 ? 'Running checks...' : 'Processing results...'}
+              </span>
+              <span style={{ fontSize: '13px', color: 'var(--red)', fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{pct}%</span>
+            </div>
+
+            {err && (
+              <div style={{ marginTop: '14px', padding: '12px 14px', background: '#fff0f0', border: '1px solid #fdd', borderLeft: '3px solid var(--red)', borderRadius: '6px', fontSize: '13px', color: '#c00' }}>
+                ⚠ {err}
+              </div>
+            )}
+          </div>
+
+          {CATEGORIES.map(cat => {
+            const checks = ALL_CHECKS.filter(c => c.category === cat);
+            const catStatuses = checks.map(c => statuses[c.id] || 'pending');
+            const catDone = catStatuses.filter(s => s === 'pass' || s === 'fail' || s === 'error').length;
+            const catRunning = catStatuses.some(s => s === 'running');
+            return (
+              <div
+                key={cat}
+                style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '14px 18px',
+                  marginBottom: '8px',
+                  boxShadow: 'var(--shadow-sm)',
+                  transition: 'border-color var(--transition)',
+                  borderLeft: catRunning ? '3px solid var(--red)' : '3px solid var(--border)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '14px' }}>{CAT_ICONS[cat]}</span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', flex: 1 }}>{cat}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-faint)', fontFamily: "'Space Mono', monospace" }}>{catDone}/{checks.length}</span>
+                </div>
+                <div>
+                  {checks.map(c => (
+                    <div
+                      key={c.id}
+                      className="row-stagger"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '5px 0',
+                        borderBottom: '1px solid var(--border)',
+                        animationDelay: `${ALL_CHECKS.findIndex(x => x.id === c.id) * 30}ms`,
+                      }}
+                    >
+                      <span style={{ width: '16px', textAlign: 'center', flexShrink: 0 }}>
+                        <StatusIcon s={statuses[c.id] || 'pending'} />
+                      </span>
+                      <span style={{
+                        fontSize: '13px',
+                        fontFamily: "'Space Mono', monospace",
+                        color: statuses[c.id] === 'running' ? 'var(--red)'
+                          : statuses[c.id] === 'pass' ? 'var(--text-secondary)'
+                          : statuses[c.id] === 'fail' ? 'var(--text-primary)'
+                          : 'var(--text-faint)',
+                        flex: 1,
+                        transition: 'color 0.3s ease',
+                      }}>
+                        {c.name}
+                      </span>
+                      {statuses[c.id] === 'running' && (
+                        <span style={{ fontSize: '11px', color: 'var(--red)', fontFamily: "'Space Mono', monospace", opacity: 0.8 }}>checking…</span>
+                      )}
+                      {statuses[c.id] === 'pending' && (
+                        <span className="skeleton" style={{ width: '55px', height: '8px', borderRadius: '4px' }} />
+                      )}
+                      {statuses[c.id] === 'fail' && (() => {
+                        const r = results.current.find(x => x.checkId === c.id);
+                        if (!r) return null;
+                        const colors = { CRITICAL: '#b91c1c', HIGH: '#e02929', MEDIUM: '#b45309', LOW: '#1d4ed8' };
+                        const bgs = { CRITICAL: '#fee2e2', HIGH: '#fee2e2', MEDIUM: '#fef3c7', LOW: '#dbeafe' };
+                        return (
+                          <span style={{ fontSize: '10px', fontWeight: 700, color: colors[r.severity] || 'var(--red)', background: bgs[r.severity] || '#fee2e2', padding: '1px 6px', borderRadius: '3px', fontFamily: "'Space Mono', monospace" }}>
+                            {r.severity}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--text-faint)', marginTop: '16px', fontFamily: "'Space Mono', monospace" }}>
+            🔒 Results are not stored anywhere.
+          </p>
         </div>
-
-        {/* Check list grouped by category */}
-        {CATEGORIES.map(cat => {
-          const checks = ALL_CHECKS.filter(c => c.category === cat);
-          return (
-            <div key={cat} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: '7px', padding: '14px 18px', marginBottom: '10px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '10px' }}>
-                {cat}
-              </div>
-              <div>
-                {checks.map(c => (
-                  <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 0', borderBottom: '1px solid #f5f5f5' }}>
-                    <span style={{ width: '16px', textAlign: 'center', flexShrink: 0, fontSize: '13px' }}>
-                      {statusIcon(statuses[c.id] || 'pending')}
-                    </span>
-                    <span style={{
-                      fontSize: '13px',
-                      fontFamily: "'Space Mono', monospace",
-                      color: statuses[c.id] === 'running' ? '#e02929' : statuses[c.id] === 'pass' ? '#555' : statuses[c.id] === 'fail' ? '#111' : '#bbb',
-                      flex: 1,
-                    }}>
-                      {c.name}
-                    </span>
-                    {statuses[c.id] === 'running' && (
-                      <span style={{ fontSize: '11px', color: '#e02929', fontFamily: "'Space Mono', monospace" }}>checking...</span>
-                    )}
-                    {statuses[c.id] === 'fail' && (() => {
-                      const r = results.current.find(x => x.checkId === c.id);
-                      if (!r) return null;
-                      const colors = { CRITICAL: '#b91c1c', HIGH: '#e02929', MEDIUM: '#b45309', LOW: '#1d4ed8' };
-                      return (
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: colors[r.severity] || '#e02929', background: r.severity === 'MEDIUM' ? '#fef3c7' : r.severity === 'LOW' ? '#dbeafe' : '#fee2e2', padding: '1px 6px', borderRadius: '3px', fontFamily: "'Space Mono', monospace" }}>
-                          {r.severity}
-                        </span>
-                      );
-                    })()}
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-
-        <p style={{ textAlign: 'center', fontSize: '12px', color: '#bbb', marginTop: '12px' }}>
-          Results are not stored anywhere.
-        </p>
       </div>
     </div>
   );

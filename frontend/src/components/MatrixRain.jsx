@@ -29,7 +29,6 @@ export default function MatrixRain() {
       for (let i = 0; i < drops.length; i++) {
         const char = chars[Math.floor(Math.random() * chars.length)];
 
-        // Vary colors: mostly dim cyan, occasional bright
         if (Math.random() > 0.98) {
           ctx.fillStyle = '#00FF88';
         } else if (Math.random() > 0.95) {

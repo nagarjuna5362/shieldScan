@@ -1,9 +1,3 @@
-/**
- * rateLimiting.js — Checks 23-25: Rate Limiting & Abuse Prevention
- * CHECK 23: Rate Limiting Detection
- * CHECK 24: Open Redirect Vulnerability
- * CHECK 25: Security.txt File
- */
 
 const axios = require('axios');
 
@@ -21,7 +15,6 @@ async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// CHECK 23 — Rate Limiting Detection
 async function checkRateLimiting(parsedUrl) {
   const base = {
     checkId: 'rate_limiting',
@@ -31,7 +24,7 @@ async function checkRateLimiting(parsedUrl) {
   };
 
   try {
-    // First, check a single request for rate-limit headers and WAF/CDN indicators
+    
     let probeResponse;
     try {
       probeResponse = await withTimeout(
@@ -46,13 +39,11 @@ async function checkRateLimiting(parsedUrl) {
       probeResponse = null;
     }
 
-    // ── WAF / CDN Detection ───────────────────────────────────────────────────
     if (probeResponse) {
       const h = probeResponse.headers;
       const server = (h['server'] || '').toLowerCase();
       const via = (h['via'] || '').toLowerCase();
 
-      // Cloudflare
       if (h['cf-ray'] || server.includes('cloudflare')) {
         return {
           ...base, severity: 'INFO', status: 'PASS',
@@ -61,7 +52,7 @@ async function checkRateLimiting(parsedUrl) {
           attackScenario: null, fix: null, points_deducted: 0,
         };
       }
-      // AWS CloudFront / WAF
+      
       if (h['x-amz-cf-id'] || h['x-amzn-requestid'] || via.includes('cloudfront')) {
         return {
           ...base, severity: 'INFO', status: 'PASS',
@@ -70,7 +61,7 @@ async function checkRateLimiting(parsedUrl) {
           attackScenario: null, fix: null, points_deducted: 0,
         };
       }
-      // Fastly CDN
+      
       if (h['x-served-by']?.includes('fastly') || h['x-fastly-request-id']) {
         return {
           ...base, severity: 'INFO', status: 'PASS',
@@ -79,7 +70,7 @@ async function checkRateLimiting(parsedUrl) {
           attackScenario: null, fix: null, points_deducted: 0,
         };
       }
-      // Akamai
+      
       if (h['x-akamai-transformed'] || h['x-check-cacheable'] || server.includes('akamai')) {
         return {
           ...base, severity: 'INFO', status: 'PASS',
@@ -88,7 +79,7 @@ async function checkRateLimiting(parsedUrl) {
           attackScenario: null, fix: null, points_deducted: 0,
         };
       }
-      // Standard RateLimit headers (RFC 6585 / common implementations)
+      
       if (h['ratelimit-limit'] || h['x-ratelimit-limit'] || h['retry-after'] ||
           h['x-rate-limit-limit'] || h['x-rate-limit-remaining']) {
         return {
@@ -104,8 +95,6 @@ async function checkRateLimiting(parsedUrl) {
       }
     }
 
-    // ── Rapid-fire test ───────────────────────────────────────────────────────
-    // Send 15 rapid requests and check if any are throttled
     const rapidRequests = Array.from({ length: 15 }, () =>
       withTimeout(
         axios.get(parsedUrl.href, {
@@ -130,7 +119,6 @@ async function checkRateLimiting(parsedUrl) {
       };
     }
 
-    // ── No rate limiting found ────────────────────────────────────────────────
     return {
       ...base, severity: 'HIGH', status: 'FAIL',
       description: 'No rate limiting detected — server accepted all rapid requests without throttling',
@@ -147,7 +135,6 @@ async function checkRateLimiting(parsedUrl) {
   }
 }
 
-// CHECK 24 — Open Redirect Vulnerability
 async function checkOpenRedirect(parsedUrl) {
   const base = {
     checkId: 'open_redirect',
@@ -188,7 +175,7 @@ async function checkOpenRedirect(parsedUrl) {
             response.headers['location'].includes('evil-redirect-test-12345.com')) {
           vulnerable.push({ path, location: response.headers['location'] });
         }
-      } catch { /* Path doesn't exist, that's fine */ }
+      } catch {  }
     }
 
     if (vulnerable.length > 0) {
@@ -232,7 +219,6 @@ app.get('/redirect', (req, res) => {
   }
 }
 
-// CHECK 25 — Security.txt File
 async function checkSecurityTxt(parsedUrl) {
   const base = {
     checkId: 'security_txt',
@@ -266,7 +252,7 @@ async function checkSecurityTxt(parsedUrl) {
             };
           }
         }
-      } catch { /* Path doesn't exist */ }
+      } catch {  }
     }
 
     return {

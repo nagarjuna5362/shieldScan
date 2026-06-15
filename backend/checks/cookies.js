@@ -1,8 +1,3 @@
-/**
- * cookies.js — Checks 15-16: Cookie & Session Security
- * CHECK 15: Cookie Security Flags
- * CHECK 16: Session Token in URL
- */
 
 const axios = require('axios');
 
@@ -16,7 +11,6 @@ function withTimeout(promise, ms) {
   ]);
 }
 
-// CHECK 15 — Cookie Security Flags
 async function checkCookieSecurity(parsedUrl) {
   const base = {
     checkId: 'cookie_security',
@@ -111,7 +105,6 @@ app.use(session({
   }
 }
 
-// CHECK 16 — Session Token in URL
 async function checkSessionInUrl(parsedUrl) {
   const base = {
     checkId: 'session_in_url',
@@ -132,7 +125,6 @@ async function checkSessionInUrl(parsedUrl) {
       }
     }
 
-    // Check URL string for common patterns
     const urlStr = parsedUrl.href.toLowerCase();
     for (const param of sessionParams) {
       if (urlStr.includes(`?${param}=`) || urlStr.includes(`&${param}=`)) {

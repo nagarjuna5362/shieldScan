@@ -1,8 +1,5 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 
-// ─────────────────────────────────────────────
-// Plain-English explainers for each check ID
-// ─────────────────────────────────────────────
 const PLAIN_EXPLANATIONS = {
   https_enforcement: {
     what: "Your website can be opened without a padlock (using http:// instead of https://).",
@@ -178,50 +175,52 @@ const SEVERITY_SIMPLE = {
   LOW: 'Minor Issue',
 };
 
-// ─── Explain Popup ────────────────────────────────────────────────
 function ExplainPopup({ checkId, name, onClose }) {
   const info = PLAIN_EXPLANATIONS[checkId];
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+      className="modal-overlay"
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
       onClick={onClose}
     >
       <div
-        style={{ background: '#ffffff', borderRadius: '8px', padding: '32px', maxWidth: '560px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }}
+        className="modal-content"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '28px', maxWidth: '560px', width: '100%', boxShadow: 'var(--shadow-lg)', maxHeight: '90vh', overflowY: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
           <div>
-            <div style={{ fontSize: '11px', color: '#64748b', fontFamily: "'Space Mono', monospace", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Plain-English Explanation</div>
-            <div style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', fontFamily: "'Outfit', sans-serif" }}>{name}</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: "'Space Mono', monospace", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Plain-English Explanation</div>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: "'Outfit', sans-serif" }}>{name}</div>
           </div>
-          <button onClick={onClose} style={{ background: '#f1f5f9', border: 'none', borderRadius: '4px', width: '30px', height: '30px', fontSize: '16px', cursor: 'pointer', color: '#475569', flexShrink: 0, marginLeft: '12px' }}>x</button>
+          <button onClick={onClose} style={{ background: 'var(--bg-card-2)', border: '1px solid var(--border)', borderRadius: '6px', width: '30px', height: '30px', fontSize: '14px', cursor: 'pointer', color: 'var(--text-secondary)', flexShrink: 0, marginLeft: '12px' }}>✕</button>
         </div>
         {info ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '16px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>What is this problem?</div>
-              <div style={{ fontSize: '14px', color: '#0f172a', lineHeight: 1.6 }}>{info.what}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ background: 'var(--bg-card-2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '14px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>What is this problem?</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.65 }}>{info.what}</div>
             </div>
-            <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '6px', padding: '16px' }}>
+            <div style={{ background: 'var(--bg-card-2)', border: '1px solid #fed7aa', borderRadius: '6px', padding: '14px' }}>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#c2410c', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Why does it matter?</div>
-              <div style={{ fontSize: '14px', color: '#7c2d12', lineHeight: 1.6 }}>{info.why}</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.65 }}>{info.why}</div>
             </div>
-            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', padding: '16px' }}>
+            <div style={{ background: 'var(--bg-card-2)', border: '1px solid #fde68a', borderRadius: '6px', padding: '14px' }}>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#92400e', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Simple Real-World Example</div>
-              <div style={{ fontSize: '14px', color: '#78350f', lineHeight: 1.6, fontStyle: 'italic' }}>{info.example}</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.65, fontStyle: 'italic' }}>{info.example}</div>
             </div>
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '16px' }}>
+            <div style={{ background: 'var(--bg-card-2)', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '14px' }}>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#166534', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>How to fix it</div>
-              <div style={{ fontSize: '14px', color: '#14532d', lineHeight: 1.6 }}>{info.fix}</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.65 }}>{info.fix}</div>
             </div>
           </div>
         ) : (
-          <p style={{ color: '#475569', fontSize: '14px', lineHeight: 1.6 }}>Review the technical finding below and consult your developer about the fix instructions.</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.6 }}>Review the technical finding below and consult your developer about the fix instructions.</p>
         )}
         <button
           onClick={onClose}
-          style={{ marginTop: '24px', width: '100%', background: '#0f172a', color: '#ffffff', border: 'none', borderRadius: '6px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}
+          className="btn-primary"
+          style={{ marginTop: '20px', width: '100%', padding: '12px', fontSize: '14px', borderRadius: '7px' }}
         >
           Got it, close this
         </button>
@@ -230,7 +229,6 @@ function ExplainPopup({ checkId, name, onClose }) {
   );
 }
 
-// ─── Main VulnCard ─────────────────────────────────────────────────
 export default function VulnCard({ result, index }) {
   const [expanded, setExpanded] = useState(result.status === 'FAIL' || result.status === 'WARNING');
   const [showExplain, setShowExplain] = useState(false);
@@ -250,11 +248,10 @@ export default function VulnCard({ result, index }) {
 
       <div
         className={`animate-slide-in ${cardClass}`}
-        style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden', animationDelay: `${index * 0.05}s`, opacity: 0, animationFillMode: 'forwards', marginBottom: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', transition: 'border-color 0.2s ease, box-shadow 0.2s ease' }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.06)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'; }}
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', animationDelay: `${index * 0.05}s`, opacity: 0, animationFillMode: 'forwards', marginBottom: '10px', boxShadow: 'var(--shadow-sm)', transition: 'border-color var(--transition), box-shadow var(--transition)' }}
+        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
       >
-        {/* Header */}
         <button
           onClick={() => setExpanded(!expanded)}
           style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 18px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
@@ -262,34 +259,36 @@ export default function VulnCard({ result, index }) {
           <span style={{ fontSize: '20px', flexShrink: 0 }}>{STATUS_ICON[result.status] || 'o'}</span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ color: '#0f172a', fontWeight: 700, fontSize: '14px', fontFamily: "'Outfit', sans-serif" }}>{result.name}</span>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '14px', fontFamily: "'Outfit', sans-serif" }}>{result.name}</span>
               {!isPass && !isError && (
                 <span style={{ background: sevConfig.bg, color: sevConfig.color, border: `1px solid ${sevConfig.color}40`, fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '3px', fontFamily: "'Space Mono', monospace", whiteSpace: 'nowrap' }}>
                   {SEVERITY_SIMPLE[result.severity] || result.severity}
                 </span>
               )}
               {isPass && <span style={{ background: '#d1fae5', color: '#059669', border: '1px solid #6ee7b780', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '3px', fontFamily: "'Space Mono', monospace" }}>All Good</span>}
-              {isError && <span style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '3px', fontFamily: "'Space Mono', monospace" }}>Could Not Check</span>}
+              {isError && <span style={{ background: 'var(--bg-card-2)', color: 'var(--text-muted)', border: '1px solid var(--border)', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '3px', fontFamily: "'Space Mono', monospace" }}>Could Not Check</span>}
             </div>
-            <div style={{ color: '#64748b', fontSize: '12px', marginTop: '3px' }}>{simpleStatus}</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '3px' }}>{simpleStatus}</div>
           </div>
           {result.points_deducted > 0 && (
             <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '11px', fontWeight: 700, color: '#b91c1c', background: '#fee2e2', padding: '2px 8px', borderRadius: '4px', border: '1px solid #fca5a5', flexShrink: 0 }}>-{result.points_deducted} pts</span>
           )}
-          <span style={{ color: '#94a3b8', fontSize: '14px', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}>v</span>
+          <span style={{ color: 'var(--text-faint)', fontSize: '12px', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}>▼</span>
         </button>
 
-        {/* Expanded */}
-        {expanded && (
-          <div style={{ borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
-            {/* Action bar */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px', borderBottom: '1px solid #f1f5f9', background: '#ffffff', flexWrap: 'wrap', gap: '8px' }}>
-              <span style={{ fontSize: '12px', color: '#475569' }}>Category: <strong>{result.category}</strong></span>
+        <div style={{
+          maxHeight: expanded ? '1200px' : '0px',
+          overflow: 'hidden',
+          transition: 'max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+          borderTop: expanded ? '1px solid var(--border)' : 'none',
+        }}>
+          <div style={{ opacity: expanded ? 1 : 0, transition: 'opacity 0.25s ease', background: 'var(--bg-card-2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px', borderBottom: '1px solid var(--border)', background: 'var(--bg-card)', flexWrap: 'wrap', gap: '8px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Category: <strong style={{ color: 'var(--text-primary)' }}>{result.category}</strong></span>
               <button
                 onClick={(e) => { e.stopPropagation(); setShowExplain(true); }}
-                style={{ background: '#0f172a', color: '#ffffff', border: 'none', borderRadius: '4px', padding: '6px 16px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: "'Inter', sans-serif", transition: 'background-color 0.15s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#dc2626'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#0f172a'; }}
+                className="interactive-element"
+                style={{ background: 'var(--text-primary)', color: 'var(--bg-card)', border: 'none', borderRadius: '5px', padding: '6px 16px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: "'Inter', sans-serif" }}
               >
                 Explain this to me
               </button>
@@ -298,26 +297,26 @@ export default function VulnCard({ result, index }) {
             <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {result.technicalDetail && (
                 <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '5px' }}>What was found</div>
-                  <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '10px 14px', fontFamily: "'Space Mono', monospace", fontSize: '12px', color: '#334155', wordBreak: 'break-all' }}>{result.technicalDetail}</div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '5px' }}>What was found</div>
+                  <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '5px', padding: '10px 14px', fontFamily: "'Space Mono', monospace", fontSize: '12px', color: 'var(--text-secondary)', wordBreak: 'break-all' }}>{result.technicalDetail}</div>
                 </div>
               )}
               {result.attackScenario && (
                 <div>
                   <div style={{ fontSize: '11px', fontWeight: 700, color: '#b91c1c', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '5px' }}>What can happen if not fixed</div>
-                  <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: '4px', padding: '12px 14px', fontSize: '13px', color: '#991b1b', lineHeight: 1.6 }}>{result.attackScenario}</div>
+                  <div style={{ background: 'var(--bg-card)', border: '1px solid #fecdd3', borderLeft: '3px solid var(--red)', borderRadius: '5px', padding: '12px 14px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{result.attackScenario}</div>
                 </div>
               )}
               {result.fix && (
                 <div>
                   <div style={{ fontSize: '11px', fontWeight: 700, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '5px' }}>How to fix it</div>
-                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '4px', padding: '12px 14px', fontSize: '13px', color: '#14532d', lineHeight: 1.6, marginBottom: result.fix.code ? '8px' : 0 }}>{result.fix.description}</div>
+                  <div style={{ background: 'var(--bg-card)', border: '1px solid #bbf7d0', borderLeft: '3px solid #16a34a', borderRadius: '5px', padding: '12px 14px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: result.fix.code ? '8px' : 0 }}>{result.fix.description}</div>
                   {result.fix.code && <div className="code-block">{result.fix.code}</div>}
                 </div>
               )}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </>
   );

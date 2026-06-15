@@ -1,10 +1,3 @@
-/**
- * cors.js — Checks 11-14: CORS & API Security
- * CHECK 11: CORS Misconfiguration
- * CHECK 12: API Endpoint Enumeration
- * CHECK 13: IDOR Detection
- * CHECK 14: HTTP Methods Allowed
- */
 
 const axios = require('axios');
 
@@ -18,7 +11,6 @@ function withTimeout(promise, ms) {
   ]);
 }
 
-// CHECK 11 — CORS Misconfiguration
 async function checkCors(parsedUrl) {
   const base = {
     checkId: 'cors_misconfiguration',
@@ -123,7 +115,6 @@ app.use(cors({
   }
 }
 
-// CHECK 12 — API Endpoint Enumeration
 async function checkApiEnumeration(parsedUrl) {
   const base = {
     checkId: 'api_enumeration',
@@ -190,7 +181,6 @@ app.use('/api', authenticate);`,
   }
 }
 
-// CHECK 13 — IDOR Detection
 async function checkIdor(parsedUrl) {
   const base = {
     checkId: 'idor',
@@ -254,7 +244,6 @@ app.get('/api/orders/:id', authenticate, async (req, res) => {
   }
 }
 
-// CHECK 14 — HTTP Methods Allowed
 async function checkHttpMethods(parsedUrl) {
   const base = {
     checkId: 'http_methods',
@@ -263,51 +252,101 @@ async function checkHttpMethods(parsedUrl) {
     name: 'HTTP Methods Allowed',
   };
   try {
-    const response = await withTimeout(
-      axios.options(parsedUrl.href, {
-        validateStatus: () => true,
-        headers: { 'User-Agent': USER_AGENT },
-        timeout: TIMEOUT,
-      }),
-      TIMEOUT
-    );
+    const [traceRes, putRes, deleteRes] = await Promise.allSettled([
+      withTimeout(
+        axios.request({
+          url: parsedUrl.href,
+          method: 'TRACE',
+          validateStatus: () => true,
+          headers: { 'User-Agent': USER_AGENT, 'X-ShieldScan-Probe': 'true' },
+          timeout: 3000,
+        }),
+        3000
+      ),
+      withTimeout(
+        axios.request({
+          url: `${parsedUrl.origin}/shieldscan-http-probe-test`,
+          method: 'PUT',
+          data: { test: true },
+          validateStatus: () => true,
+          headers: { 'User-Agent': USER_AGENT },
+          timeout: 3000,
+        }),
+        3000
+      ),
+      withTimeout(
+        axios.request({
+          url: `${parsedUrl.origin}/shieldscan-http-probe-test`,
+          method: 'DELETE',
+          validateStatus: () => true,
+          headers: { 'User-Agent': USER_AGENT },
+          timeout: 3000,
+        }),
+        3000
+      ),
+    ]);
 
-    const allow = response.headers['allow'] || response.headers['access-control-allow-methods'] || '';
-    const allowUpper = allow.toUpperCase();
+    const activeViolations = [];
 
-    const hasTrace = allowUpper.includes('TRACE');
-
-    if (hasTrace) {
-      return {
-        ...base,
-        severity: 'MEDIUM',
-        status: 'FAIL',
-        description: 'TRACE method is enabled — allows Cross-Site Tracing (XST) attacks',
-        technicalDetail: `Allow header: ${allow}`,
-        attackScenario: 'TRACE method echoes the request back. Even if HttpOnly cookies are set, an attacker using TRACE can trick a browser into leaking cookie values in the response body — bypassing HttpOnly protection entirely.',
-        fix: {
-          description: 'Disable TRACE method at the web server level',
-          code: `# Nginx\nif ($request_method = TRACE) { return 405; }\n\n# Apache\nTraceEnable Off\n\n# Express.js\napp.use((req, res, next) => {\n  if (req.method === 'TRACE') return res.status(405).end();\n  next();\n});`,
-        },
-        points_deducted: 5,
-      };
+    // Check TRACE
+    if (traceRes.status === 'fulfilled' && traceRes.value.status === 200) {
+      const body = typeof traceRes.value.data === 'string' ? traceRes.value.data : '';
+      if (body.includes('X-ShieldScan-Probe') || traceRes.value.headers['content-type']?.includes('message/http')) {
+        activeViolations.push('TRACE (enabled and echoed test header)');
+      }
     }
 
-    // No allow header returned — this is normal for most sites
-    if (!allow) {
+    // Check unauthenticated PUT/DELETE
+    if (putRes.status === 'fulfilled' && [200, 201, 204].includes(putRes.value.status)) {
+      activeViolations.push('PUT (returned HTTP ' + putRes.value.status + ' on unauthenticated path)');
+    }
+    if (deleteRes.status === 'fulfilled' && [200, 201, 202, 204].includes(deleteRes.value.status)) {
+      activeViolations.push('DELETE (returned HTTP ' + deleteRes.value.status + ' on unauthenticated path)');
+    }
+
+    if (activeViolations.length > 0) {
+      const isTraceFailed = activeViolations.some(v => v.startsWith('TRACE'));
       return {
-        ...base, severity: 'INFO', status: 'PASS',
-        description: 'No restrictive HTTP methods detected (OPTIONS returned no Allow header)',
-        technicalDetail: 'OPTIONS response did not include an Allow header — TRACE not detected',
-        attackScenario: null, fix: null, points_deducted: 0,
+        ...base,
+        severity: isTraceFailed ? 'MEDIUM' : 'HIGH',
+        status: 'FAIL',
+        description: `Dangerous HTTP methods enabled/accepted: ${activeViolations.join(', ')}`,
+        technicalDetail: `Active method probes accepted: ${activeViolations.join(' | ')}`,
+        attackScenario: isTraceFailed
+          ? 'The TRACE method echoes request headers back to the client. Attackers can execute Cross-Site Tracing (XST) to bypass HttpOnly flags on session cookies by retrieving them from the reflected HTTP headers.'
+          : 'Allowing unauthenticated PUT or DELETE requests on arbitrary paths could allow attackers to upload web shells, override existing files, or delete critical application assets directly.',
+        fix: {
+          description: 'Disable TRACE, PUT, and DELETE methods globally on your reverse proxy or web server unless explicitly authenticated',
+          code: `# Nginx config
+# Disable TRACE and block unauthorized PUT/DELETE
+if ($request_method = TRACE) { return 405; }
+if ($request_method ~ ^(PUT|DELETE)$ ) {
+  # require authentication or block globally:
+  return 405;
+}
+
+# Express.js Middleware
+app.use((req, res, next) => {
+  const blocked = ['TRACE'];
+  if (blocked.includes(req.method)) {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+  next();
+});`,
+        },
+        points_deducted: isTraceFailed ? 5 : 10,
       };
     }
 
     return {
-      ...base, severity: 'INFO', status: 'PASS',
-      description: `HTTP methods look safe — ${allow || 'standard methods only'}`,
-      technicalDetail: `Allow header: ${allow}`,
-      attackScenario: null, fix: null, points_deducted: 0,
+      ...base,
+      severity: 'INFO',
+      status: 'PASS',
+      description: 'Dangerous HTTP methods (TRACE, PUT, DELETE) are properly blocked/disabled',
+      technicalDetail: 'Active probes: TRACE, PUT, and DELETE requests were rejected or did not echo credentials.',
+      attackScenario: null,
+      fix: null,
+      points_deducted: 0,
     };
   } catch (err) {
     return { ...base, severity: 'INFO', status: 'ERROR', description: `HTTP methods check failed: ${err.message}`, technicalDetail: err.message, attackScenario: null, fix: null, points_deducted: 0 };

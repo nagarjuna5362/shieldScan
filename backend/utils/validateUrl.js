@@ -1,6 +1,3 @@
-/**
- * validateUrl.js — URL validation + SSRF protection
- */
 
 const PRIVATE_IP_RANGES = [
   /^127\./,
@@ -37,7 +34,6 @@ function validateUrl(rawUrl) {
     }
   }
 
-  // Block file:// and other non-web schemes embedded in hostname tricks
   if (hostname.includes('..') || hostname.length > 253) {
     return { valid: false, error: 'Invalid hostname' };
   }
