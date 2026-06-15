@@ -320,6 +320,10 @@ app.post('/api/scan', scanLimiter, async (req, res, next) => {
     const fixPriorities = getFixPriorities(allResults);
     const scanDuration = ((Date.now() - scanStart) / 1000).toFixed(1) + 's';
 
+    // #region agent log
+    try{const fs=require('fs');const path=require('path');fs.appendFileSync(path.join(__dirname,'..','debug-59f1b2.log'),JSON.stringify({sessionId:'59f1b2',location:'server.js:scan-complete',message:'Scan finished',data:{hostname:parsed.hostname,resultCount:allResults.length,score,durationSec:scanDuration},timestamp:Date.now(),hypothesisId:'E'})+'\n');}catch(_){}
+    // #endregion
+
     sendEvent({
       type: 'complete',
       score,
@@ -334,6 +338,7 @@ app.post('/api/scan', scanLimiter, async (req, res, next) => {
       hostname: parsed.hostname,
       url: parsed.href,
       timestamp: new Date().toISOString(),
+      results: allResults,
     });
 
     res.end();

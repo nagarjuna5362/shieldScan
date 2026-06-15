@@ -7,8 +7,7 @@ import Terms from './pages/Terms';
 import BackgroundGrid from './components/BackgroundGrid';
 import ConsentGate from './components/ConsentGate';
 import ContactModal from './components/ContactModal';
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+import { API_BASE } from './config';
 
 export default function App() {
   const [page, setPage] = useState('landing');
@@ -77,7 +76,7 @@ export default function App() {
 
   const onScanComplete = (results, final) => {
     setCheckResults(results);
-    setFinalData(final);
+    setFinalData({ ...final, results });
     setPage('results');
   };
 

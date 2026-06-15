@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import ScoreRing from '../components/ScoreRing';
 import VulnCard from '../components/VulnCard';
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+import { API_BASE } from '../config';
 
 const SEV_ORDER = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
 
@@ -141,17 +140,22 @@ export default function Results({ results, finalData, url, onRescan, dark, onTog
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    if (!finalData || !results?.length) return;
+    const reportPayload = { ...finalData, results };
     fetch(`${API_BASE}/reports`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ report: finalData }),
+      body: JSON.stringify({ report: reportPayload }),
     })
       .then((res) => res.json())
       .then((data) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7785/ingest/2de4b017-3375-4a31-8b3b-6cef6255f665',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'59f1b2'},body:JSON.stringify({sessionId:'59f1b2',location:'Results.jsx:report-saved',message:'Report save response',data:{uuid:data.uuid,resultsCount:results.length,hasResultsInPayload:!!reportPayload.results?.length},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         if (data.uuid) setReportUuid(data.uuid);
       })
       .catch((err) => console.error('Error saving report:', err));
-  }, [finalData]);
+  }, [finalData, results]);
 
   const sorted = useMemo(() => {
     if (!results) return [];

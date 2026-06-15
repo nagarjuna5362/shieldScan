@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import FlipCard from '../components/FlipCard';
-
-const API_URL = import.meta.env.VITE_API_URL || '';
+import { BACKEND_ROOT } from '../config';
 const SAMPLES = ['github.com', 'wikipedia.org', 'bbc.co.uk', 'gov.in'];
 
 const CHECKS_DATA = [
@@ -12,11 +11,11 @@ const CHECKS_DATA = [
   { icon: '📁', label: 'Exposed Files', description: 'Probes for public access to sensitive files like .env, config, and .git.', disaster: 'Exposing .env credentials gives attackers full database and server control!' },
   { icon: '🌍', label: 'DNS Records', description: 'Verifies SPF, DKIM, DMARC, and checks for subdomain takeover risks.', disaster: 'Weak DNS settings let scammers spoof your emails to phish your clients!' },
   { icon: '⚡', label: 'Rate Limiting', description: 'Tests endpoint vulnerability to brute-force and Denial-of-Service attacks.', disaster: 'No rate limits allow bots to spam forms, crash servers, and inflate costs!' },
-  { icon: '🔍', label: '25 checks total', description: 'A complete non-intrusive scan covering server disclosures and DNS flaws.', disaster: 'Ignoring security checks leaves quiet backdoors open for massive data breaches!' }
+  { icon: '🔍', label: '32 checks total', description: 'A complete non-intrusive scan covering server disclosures and DNS flaws.', disaster: 'Ignoring security checks leaves quiet backdoors open for massive data breaches!' }
 ];
 
 const STATS = [
-  { icon: '🔍', value: '25', label: 'security checks' },
+  { icon: '🔍', value: '32', label: 'security checks' },
   { icon: '⚡', value: '~60s', label: 'scan time' },
   { icon: '🆓', value: '100%', label: 'free forever' },
   { icon: '🔒', value: 'Zero', label: 'data stored' },
@@ -485,8 +484,8 @@ export default function Landing({ onStart, dark, onToggleDark, onNavigate, onCon
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
           <button onClick={() => onNavigate('privacy')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '11px', cursor: 'pointer', fontFamily: "'Space Mono', monospace", textDecoration: 'underline', padding: 0 }}>Privacy Policy</button>
           <button onClick={() => onNavigate('terms')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '11px', cursor: 'pointer', fontFamily: "'Space Mono', monospace", textDecoration: 'underline', padding: 0 }}>Terms of Service</button>
-          <a href={`${API_URL}/security.txt`} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: "'Space Mono', monospace" }}>security.txt</a>
-          <a href={`${API_URL}/robots.txt`} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: "'Space Mono', monospace" }}>robots.txt</a>
+          <a href={`${BACKEND_ROOT}/security.txt`} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: "'Space Mono', monospace" }}>security.txt</a>
+          <a href={`${BACKEND_ROOT}/robots.txt`} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: "'Space Mono', monospace" }}>robots.txt</a>
         </div>
         <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: "'Space Mono', monospace" }}>
           made by <span style={{ color: 'var(--red)', fontWeight: 700 }}>nagarjuna's team</span>

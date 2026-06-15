@@ -1,4 +1,8 @@
 {
+  "rewrites": [
+    { "source": "/report/:uuid", "destination": "/" },
+    { "source": "/((?!assets/|_/backend/|logo\\.png|favicon\\.svg|icons\\.svg|robots\\.txt|security\\.txt|\\.well-known/).*)", "destination": "/" }
+  ],
   "experimentalServices": {
     "frontend": {
       "root": "frontend",

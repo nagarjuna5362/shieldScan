@@ -1,31 +1,39 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { API_BASE } from '../config';
 
 const ALL_CHECKS = [
-  { id: 'https_enforcement',    name: 'HTTPS Enforcement',         category: 'Transport' },
-  { id: 'ssl_certificate',      name: 'SSL/TLS Certificate',        category: 'Transport' },
-  { id: 'hsts',                 name: 'HSTS Header',                category: 'Transport' },
-  { id: 'tls_version',          name: 'TLS Version',                category: 'Transport' },
-  { id: 'csp',                  name: 'Content Security Policy',    category: 'Headers' },
-  { id: 'clickjacking',         name: 'Clickjacking Protection',    category: 'Headers' },
-  { id: 'content_type_options', name: 'Content-Type Sniffing',      category: 'Headers' },
-  { id: 'referrer_policy',      name: 'Referrer Policy',            category: 'Headers' },
-  { id: 'permissions_policy',   name: 'Permissions Policy',         category: 'Headers' },
-  { id: 'xss_protection',       name: 'XSS Protection',             category: 'Headers' },
-  { id: 'cors_misconfiguration',name: 'CORS Policy',                category: 'CORS & API' },
-  { id: 'api_enumeration',      name: 'API Enumeration',            category: 'CORS & API' },
-  { id: 'idor',                 name: 'IDOR Detection',             category: 'CORS & API' },
-  { id: 'http_methods',         name: 'HTTP Methods',               category: 'CORS & API' },
-  { id: 'cookie_security',      name: 'Cookie Flags',               category: 'Cookies' },
-  { id: 'session_in_url',       name: 'Session in URL',             category: 'Cookies' },
-  { id: 'sensitive_files',      name: 'Sensitive Files',            category: 'Exposure' },
-  { id: 'server_disclosure',    name: 'Server Info Leak',           category: 'Exposure' },
-  { id: 'directory_listing',    name: 'Directory Listing',          category: 'Exposure' },
-  { id: 'stack_trace',          name: 'Error Message Leak',         category: 'Exposure' },
-  { id: 'dns_security',         name: 'DNS Records (SPF/DMARC)',    category: 'DNS' },
-  { id: 'subdomain_takeover',   name: 'Subdomain Takeover',         category: 'DNS' },
-  { id: 'rate_limiting',        name: 'Rate Limiting',              category: 'Abuse' },
-  { id: 'open_redirect',        name: 'Open Redirect',              category: 'Abuse' },
-  { id: 'security_txt',         name: 'Security.txt',               category: 'Abuse' },
+  { id: 'https_enforcement',     name: 'HTTPS Enforcement',          category: 'Transport' },
+  { id: 'ssl_certificate',       name: 'SSL/TLS Certificate',         category: 'Transport' },
+  { id: 'ssl_chain',             name: 'SSL Certificate Chain',         category: 'Transport' },
+  { id: 'hsts',                  name: 'HSTS Header',                 category: 'Transport' },
+  { id: 'tls_version',           name: 'TLS Version',                   category: 'Transport' },
+  { id: 'mixed_content',         name: 'Mixed Content',               category: 'Transport' },
+  { id: 'csp',                   name: 'Content Security Policy',     category: 'Headers' },
+  { id: 'clickjacking',          name: 'Clickjacking Protection',     category: 'Headers' },
+  { id: 'content_type_options',  name: 'Content-Type Sniffing',       category: 'Headers' },
+  { id: 'referrer_policy',       name: 'Referrer Policy',             category: 'Headers' },
+  { id: 'permissions_policy',    name: 'Permissions Policy',          category: 'Headers' },
+  { id: 'xss_protection',        name: 'XSS Protection',              category: 'Headers' },
+  { id: 'cors_misconfiguration', name: 'CORS Policy',                 category: 'CORS & API' },
+  { id: 'api_enumeration',       name: 'API Enumeration',             category: 'CORS & API' },
+  { id: 'idor',                  name: 'IDOR Detection',              category: 'CORS & API' },
+  { id: 'http_methods',          name: 'HTTP Methods',                category: 'CORS & API' },
+  { id: 'email_injection',       name: 'Email Injection',             category: 'CORS & API' },
+  { id: 'cookie_security',       name: 'Cookie Flags',                category: 'Cookies' },
+  { id: 'session_in_url',        name: 'Session in URL',              category: 'Cookies' },
+  { id: 'sensitive_files',       name: 'Sensitive Files',             category: 'Exposure' },
+  { id: 'server_disclosure',     name: 'Server Info Leak',            category: 'Exposure' },
+  { id: 'directory_listing',     name: 'Directory Listing',           category: 'Exposure' },
+  { id: 'stack_trace',           name: 'Error Message Leak',          category: 'Exposure' },
+  { id: 'dns_security',          name: 'DNS Records (SPF/DMARC)',     category: 'DNS' },
+  { id: 'dkim_record',           name: 'DKIM Record',                 category: 'DNS' },
+  { id: 'caa_record',            name: 'CAA Record',                  category: 'DNS' },
+  { id: 'subdomain_takeover',    name: 'Subdomain Takeover',          category: 'DNS' },
+  { id: 'subdomains',            name: 'Subdomain Exposure',          category: 'DNS' },
+  { id: 'open_ports',            name: 'Exposed Ports',               category: 'DNS' },
+  { id: 'rate_limiting',         name: 'Rate Limiting',               category: 'Abuse' },
+  { id: 'open_redirect',         name: 'Open Redirect',                 category: 'Abuse' },
+  { id: 'security_txt',          name: 'Security.txt',                category: 'Abuse' },
 ];
 
 const CATEGORIES = ['Transport','Headers','CORS & API','Cookies','Exposure','DNS','Abuse'];
@@ -48,8 +56,6 @@ function StatusIcon({ s }) {
   if (s === 'error') return <span style={{ color: 'var(--text-faint)' }}>?</span>;
   return <span className="skeleton" style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%' }} />;
 }
-
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 export default function Scanning({ url, onComplete, onCancel, dark, onToggleDark, onContactClick }) {
   const [statuses, setStatuses]     = useState({});
@@ -78,6 +84,9 @@ export default function Scanning({ url, onComplete, onCancel, dark, onToggleDark
     }, 1100);
 
     (async () => {
+      // #region agent log
+      fetch('http://127.0.0.1:7785/ingest/2de4b017-3375-4a31-8b3b-6cef6255f665',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'59f1b2'},body:JSON.stringify({sessionId:'59f1b2',location:'Scanning.jsx:scan-start',message:'Scan initiated',data:{url,apiBase:API_BASE,expectedChecks:ALL_CHECKS.length},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       try {
         const res = await fetch(`${API_BASE}/scan`, {
           method: 'POST',
@@ -105,6 +114,9 @@ export default function Scanning({ url, onComplete, onCancel, dark, onToggleDark
                 results.current.push(data);
                 setDone(n => n+1);
               } else if (data.type === 'complete') {
+                // #region agent log
+                fetch('http://127.0.0.1:7785/ingest/2de4b017-3375-4a31-8b3b-6cef6255f665',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'59f1b2'},body:JSON.stringify({sessionId:'59f1b2',location:'Scanning.jsx:scan-complete',message:'Scan SSE complete',data:{checksReceived:results.current.length,expectedChecks:ALL_CHECKS.length,score:data.score},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+                // #endregion
                 clearInterval(tick);
                 clearInterval(runAnim);
                 // Mark all remaining pending/running checks as done
@@ -129,7 +141,10 @@ export default function Scanning({ url, onComplete, onCancel, dark, onToggleDark
         }
       } catch (e) {
         if (e.name !== 'AbortError') {
-          const apiTarget = import.meta.env.VITE_API_URL || 'local server';
+          // #region agent log
+          fetch('http://127.0.0.1:7785/ingest/2de4b017-3375-4a31-8b3b-6cef6255f665',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'59f1b2'},body:JSON.stringify({sessionId:'59f1b2',location:'Scanning.jsx:scan-error',message:'Scan fetch failed',data:{error:e.message,apiBase:API_BASE},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
+          // #endregion
+          const apiTarget = API_BASE || 'local server';
           setErr(`Cannot reach backend (${apiTarget}). Please verify it is running.`);
           clearInterval(tick);
         }

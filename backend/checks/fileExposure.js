@@ -1,9 +1,21 @@
 const axios = require('axios');
 
-const TIMEOUT = 7000;
+const TIMEOUT = 5000;
 const USER_AGENT = 'ShieldScan-SecurityBot/1.0 (security scanner)';
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+async function probePath(origin, path, { maxRedirects = 0 } = {}) {
+  try {
+    const r = await axios.get(`${origin}${path}`, {
+      validateStatus: () => true,
+      headers: { 'User-Agent': USER_AGENT },
+      timeout: TIMEOUT,
+      maxRedirects,
+    });
+    return { path, status: r.status, data: r.data };
+  } catch {
+    return { path, status: null, data: null };
+  }
+}
 
 async function checkSensitiveFiles(parsedUrl) {
   const base = {
@@ -41,39 +53,11 @@ async function checkSensitiveFiles(parsedUrl) {
   const adminPaths = ['/admin', '/admin/login', '/administrator', '/phpmyadmin'];
 
   try {
-    const fileResults = [];
-    const adminResults = [];
+    const fileProbes = await Promise.all(sensitiveFiles.map((file) => probePath(parsedUrl.origin, file)));
+    const adminProbes = await Promise.all(adminPaths.map((path) => probePath(parsedUrl.origin, path)));
 
-    // Run probes sequentially with WAF-friendly delays
-    for (const file of sensitiveFiles) {
-      await sleep(150);
-      try {
-        const r = await axios.get(`${parsedUrl.origin}${file}`, {
-          validateStatus: () => true,
-          headers: { 'User-Agent': USER_AGENT },
-          timeout: TIMEOUT,
-          maxRedirects: 0,
-        });
-        fileResults.push({ file, status: r.status });
-      } catch {
-        fileResults.push({ file, status: null });
-      }
-    }
-
-    for (const path of adminPaths) {
-      await sleep(150);
-      try {
-        const r = await axios.get(`${parsedUrl.origin}${path}`, {
-          validateStatus: () => true,
-          headers: { 'User-Agent': USER_AGENT },
-          timeout: TIMEOUT,
-          maxRedirects: 0,
-        });
-        adminResults.push({ file: path, status: r.status });
-      } catch {
-        adminResults.push({ file: path, status: null });
-      }
-    }
+    const fileResults = fileProbes.map(({ path, status }) => ({ file: path, status }));
+    const adminResults = adminProbes.map(({ path, status }) => ({ file: path, status }));
 
     const critical = fileResults.filter((r) => r.status === 200).map((r) => r.file);
     const blocked = fileResults.filter((r) => r.status === 403).map((r) => r.file);
@@ -307,29 +291,19 @@ async function checkDirectoryListing(parsedUrl) {
   ];
 
   try {
-    const results = [];
-
-    // Run probes sequentially with WAF-friendly delays
-    for (const dir of directories) {
-      await sleep(150);
-      try {
-        const r = await axios.get(`${parsedUrl.origin}${dir}`, {
-          validateStatus: () => true,
-          headers: { 'User-Agent': USER_AGENT },
-          timeout: TIMEOUT,
-        });
-        const hasListing =
-          r.status === 200 &&
-          (r.data?.includes('Index of /') ||
-            r.data?.includes('Directory listing') ||
-            r.data?.includes('<title>Index of') ||
-            r.data?.includes('Parent Directory'));
-
-        results.push({ dir, status: r.status, hasListing });
-      } catch {
-        results.push({ dir, status: null, hasListing: false });
-      }
-    }
+    const probes = await Promise.all(
+      directories.map((dir) => probePath(parsedUrl.origin, dir, { maxRedirects: 5 }))
+    );
+    const results = probes.map(({ path, status, data }) => ({
+      dir: path,
+      status,
+      hasListing:
+        status === 200 &&
+        (data?.includes('Index of /') ||
+          data?.includes('Directory listing') ||
+          data?.includes('<title>Index of') ||
+          data?.includes('Parent Directory')),
+    }));
 
     const exposed = results.filter((r) => r.hasListing).map((r) => r.dir);
 

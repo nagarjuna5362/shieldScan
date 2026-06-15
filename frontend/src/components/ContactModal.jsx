@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
-import emailjs from '@emailjs/browser';
-
-const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_scdpp7p';
-const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_7nhspo9';
-const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'Z8m-cZALjWLNN6L4Q';
+import { API_BASE } from '../config';
 
 export default function ContactModal({ onClose }) {
   const [name, setName] = useState('');
@@ -21,13 +17,12 @@ export default function ContactModal({ onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading) return; // Prevent duplicate submissions
+    if (loading) return;
 
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
     const trimmedMessage = issue.trim();
 
-    // Validations
     if (!trimmedName) {
       showToast('Name is required.', 'error');
       return;
@@ -53,32 +48,25 @@ export default function ContactModal({ onClose }) {
     setLoading(true);
 
     try {
-      const templateParams = {
-        from_name: trimmedName,
-        from_email: trimmedEmail,
-        message: trimmedMessage,
-      };
+      const res = await fetch(`${API_BASE}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmedName, email: trimmedEmail, issue: trimmedMessage }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send message');
 
-      const result = await emailjs.send(
-        SERVICE_ID,
-        TEMPLATE_ID,
-        templateParams,
-        PUBLIC_KEY
-      );
+      // #region agent log
+      fetch('http://127.0.0.1:7785/ingest/2de4b017-3375-4a31-8b3b-6cef6255f665',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'59f1b2'},body:JSON.stringify({sessionId:'59f1b2',location:'ContactModal.jsx:contact-sent',message:'Contact form submitted',data:{ok:res.ok,status:res.status},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
 
-      if (result.status !== 200) {
-        throw new Error('Failed to deliver message via EmailJS');
-      }
-
-      showToast('Support request sent successfully.', 'success');
-      
-      // Reset form fields
+      showToast(data.message || 'Support request sent successfully.', 'success');
       setName('');
       setEmail('');
       setIssue('');
     } catch (err) {
-      console.error('EmailJS Error:', err);
-      showToast('Support request failed to send. Please try again.', 'error');
+      console.error('Contact form error:', err);
+      showToast(err.message || 'Support request failed to send. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -112,7 +100,6 @@ export default function ContactModal({ onClose }) {
         flexDirection: 'column',
         gap: '20px'
       }} onClick={(e) => e.stopPropagation()}>
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="interactive-element"
@@ -138,7 +125,6 @@ export default function ContactModal({ onClose }) {
           ✕
         </button>
 
-        {/* Header */}
         <div>
           <h2 style={{
             fontSize: '22px',
@@ -157,9 +143,7 @@ export default function ContactModal({ onClose }) {
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Name Field */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'Space Mono', monospace" }}>Name</label>
             <input
@@ -184,7 +168,6 @@ export default function ContactModal({ onClose }) {
             />
           </div>
 
-          {/* Email Field */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'Space Mono', monospace" }}>Email Address</label>
             <input
@@ -209,7 +192,6 @@ export default function ContactModal({ onClose }) {
             />
           </div>
 
-          {/* Issue Description Field */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'Space Mono', monospace" }}>Describe the Issue</label>
             <textarea
@@ -240,7 +222,6 @@ export default function ContactModal({ onClose }) {
             </div>
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
@@ -283,7 +264,6 @@ export default function ContactModal({ onClose }) {
         </form>
       </div>
 
-      {/* Custom Toast Notification */}
       {toast.show && (
         <div style={{
           position: 'fixed',
