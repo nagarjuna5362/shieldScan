@@ -1,42 +1,49 @@
 const CHECK_WEIGHTS = {
-  https_enforcement: 15,
-  ssl_certificate: 15,
-  ssl_chain: 8,
-  hsts: 8,
-  tls_version: 7,
+  // Transport — Core security foundation (high weight)
+  https_enforcement: 12,
+  ssl_certificate:   12,
+  ssl_chain:          6,
+  hsts:               8,
+  tls_version:        7,
 
-  csp: 8,
-  clickjacking: 8,
-  content_type_options: 4,
-  referrer_policy: 3,
-  permissions_policy: 3,
-  xss_protection: 3,
+  // Headers — Critical for web security (higher weight)
+  csp:                10,
+  clickjacking:        8,
+  content_type_options: 5,
+  referrer_policy:     4,
+  permissions_policy:  4,
+  xss_protection:      4,
 
-  cors_misconfiguration: 10,
-  api_enumeration: 5,
-  idor: 8,
-  http_methods: 3,
-  email_injection: 10,
+  // CORS & API — Critical for data exposure
+  cors_misconfiguration: 12,
+  api_enumeration:        5,
+  idor:                   8,
+  http_methods:           4,
+  email_injection:        5,   // reduced: often errors on sites without contact forms
 
-  cookie_security: 8,
-  session_in_url: 3,
+  // Cookies & Session — Important
+  cookie_security:    8,
+  session_in_url:     3,
 
-  sensitive_files: 10,
-  server_disclosure: 3,
-  directory_listing: 5,
-  stack_trace: 3,
+  // Exposure — Very important for real security
+  sensitive_files:   10,
+  server_disclosure:  3,
+  directory_listing:  5,
+  stack_trace:        3,
 
-  dns_security: 4,
-  subdomain_takeover: 3,
-  dkim_record: 5,
-  caa_record: 4,
-  subdomains: 10,
-  open_ports: 15,
+  // DNS & Network — Informational, lower weight (these often PASS trivially for simple sites)
+  dns_security:          4,
+  subdomain_takeover:    3,
+  dkim_record:           3,
+  caa_record:            2,
+  subdomains:            4,   // reduced: simple sites trivially pass with no subdomains
+  open_ports:            4,   // reduced: simple sites trivially pass with no open ports
 
-  rate_limiting: 5,
-  open_redirect: 4,
-  security_txt: 1,
-  mixed_content: 10,
+  // Abuse Protection — Important
+  rate_limiting:     5,
+  open_redirect:     4,
+  security_txt:      1,
+  mixed_content:     8,
 };
 
 const CHECK_METRICS = {
@@ -80,13 +87,15 @@ function earnedPoints(result) {
 
   switch (result.status) {
     case 'ERROR':
-      return null;
+      // Partial penalty: we can't confirm safety, so only award 30% of points.
+      // This prevents ERROR results from being silently excluded (which inflates scores).
+      return { pts: weight * 0.3, possible: weight };
     case 'PASS':
-      return weight;
+      return { pts: weight, possible: weight };
     case 'WARNING':
-      return weight * 0.5;
+      return { pts: weight * 0.5, possible: weight };
     case 'FAIL':
-      return 0;
+      return { pts: 0, possible: weight };
     default:
       return null;
   }
@@ -125,11 +134,10 @@ function calculateScore(results) {
       else summary.low++;
     }
 
-    const pts = earnedPoints(r);
-    const weight = CHECK_WEIGHTS[r.checkId] || 0;
-    if (pts !== null && weight > 0) {
-      earned += pts;
-      possible += weight;
+    const result = earnedPoints(r);
+    if (result !== null) {
+      earned += result.pts;
+      possible += result.possible;
     }
   }
 
@@ -137,6 +145,7 @@ function calculateScore(results) {
 
   return { score, summary };
 }
+
 
 function getGrade(score) {
   if (score >= 90) return { grade: 'A', label: 'Excellent — Well secured', emoji: '🟢' };

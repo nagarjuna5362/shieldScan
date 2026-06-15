@@ -52,10 +52,12 @@ function StatusIcon({ s }) {
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 export default function Scanning({ url, onComplete, onCancel, dark, onToggleDark, onContactClick }) {
-  const [statuses, setStatuses] = useState({});
-  const [done, setDone]         = useState(0);
-  const [elapsed, setElapsed]   = useState(0);
-  const [err, setErr]           = useState('');
+  const [statuses, setStatuses]     = useState({});
+  const [done, setDone]             = useState(0);
+  const [elapsed, setElapsed]       = useState(0);
+  const [err, setErr]               = useState('');
+  const [isComplete, setIsComplete] = useState(false);
+  const finalElapsed = useRef(0);
   const results = useRef([]);
   const t0 = useRef(Date.now());
 
@@ -104,7 +106,23 @@ export default function Scanning({ url, onComplete, onCancel, dark, onToggleDark
                 setDone(n => n+1);
               } else if (data.type === 'complete') {
                 clearInterval(tick);
-                onComplete(results.current, data);
+                clearInterval(runAnim);
+                // Mark all remaining pending/running checks as done
+                setStatuses(prev => {
+                  const next = { ...prev };
+                  ALL_CHECKS.forEach(c => {
+                    if (next[c.id] === 'pending' || next[c.id] === 'running') {
+                      next[c.id] = 'pass';
+                    }
+                  });
+                  return next;
+                });
+                setDone(ALL_CHECKS.length);
+                finalElapsed.current = Math.floor((Date.now() - t0.current) / 1000);
+                setElapsed(finalElapsed.current);
+                setIsComplete(true);
+                // Wait 2.5s so user can see the scan time and results before navigating
+                setTimeout(() => onComplete(results.current, data), 2500);
               }
             } catch {}
           }
@@ -121,7 +139,7 @@ export default function Scanning({ url, onComplete, onCancel, dark, onToggleDark
     return () => { ctrl.abort(); clearInterval(tick); clearInterval(runAnim); };
   }, []);
 
-  const pct = Math.round((done/25)*100);
+  const pct = isComplete ? 100 : Math.round((done / ALL_CHECKS.length) * 100);
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -195,22 +213,32 @@ export default function Scanning({ url, onComplete, onCancel, dark, onToggleDark
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px', fontFamily: "'Space Mono', monospace" }}>
-              <span>{done} / 25 checks done</span>
+              <span>{done} / {ALL_CHECKS.length} checks done</span>
               <span>{elapsed}s elapsed</span>
             </div>
 
             <div style={{ height: '7px', background: 'var(--border)', borderRadius: '4px', overflow: 'hidden', marginBottom: '6px' }}>
               <div
                 className="shimmer-bar"
-                style={{ height: '100%', width: `${pct}%`, borderRadius: '4px', transition: 'width 0.5s cubic-bezier(0.16,1,0.3,1)' }}
+                style={{
+                  height: '100%',
+                  width: `${pct}%`,
+                  borderRadius: '4px',
+                  transition: 'width 0.5s cubic-bezier(0.16,1,0.3,1)',
+                  background: isComplete ? 'linear-gradient(90deg,#16a34a,#22c55e)' : undefined,
+                }}
               />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-faint)', fontFamily: "'Space Mono', monospace" }}>
-                {pct < 100 ? 'Running checks...' : 'Processing results...'}
+              <span style={{ fontSize: '11px', fontFamily: "'Space Mono', monospace",
+                color: isComplete ? '#16a34a' : 'var(--text-faint)',
+                fontWeight: isComplete ? 700 : 400,
+              }}>
+                {isComplete ? `✓ Scan complete — ${finalElapsed.current}s` : pct < 100 ? 'Running checks...' : 'Finalizing...'}
               </span>
-              <span style={{ fontSize: '13px', color: 'var(--red)', fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{pct}%</span>
+              <span style={{ fontSize: '13px', color: isComplete ? '#16a34a' : 'var(--red)', fontWeight: 700, fontFamily: "'Space Mono', monospace",
+                transition: 'color 0.4s ease' }}>{pct}%</span>
             </div>
 
             {err && (
