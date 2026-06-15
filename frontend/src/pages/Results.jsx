@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import ScoreRing from '../components/ScoreRing';
 import VulnCard from '../components/VulnCard';
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 const SEV_ORDER = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
 
 const CAT_ICONS = {
@@ -135,7 +137,7 @@ export default function Results({ results, finalData, url, onRescan, dark, onTog
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    fetch('/api/reports', {
+    fetch(`${API_BASE}/reports`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ report: finalData }),
@@ -171,7 +173,7 @@ export default function Results({ results, finalData, url, onRescan, dark, onTog
 
   const downloadPdf = () => {
     if (reportUuid) {
-      window.open(`/api/reports/${reportUuid}/pdf`, '_blank');
+      window.open(`${API_BASE}/reports/${reportUuid}/pdf`, '_blank');
     }
   };
 
@@ -799,7 +801,7 @@ export default function Results({ results, finalData, url, onRescan, dark, onTog
             Embed ShieldScan Rating Badge
           </h2>
           <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <img src={`/api/badge/${hostname}?score=${score}`} alt="ShieldScan Score Badge" style={{ height: '20px' }} />
+            <img src={`${API_BASE}/badge/${hostname}?score=${score}`} alt="ShieldScan Score Badge" style={{ height: '20px' }} />
             <div style={{ flex: 1, minWidth: '240px' }}>
               <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
                 Add this SVG badge to your website footer or documentation to showcase your live security score:
@@ -808,7 +810,7 @@ export default function Results({ results, finalData, url, onRescan, dark, onTog
                 type="text"
                 readOnly
                 onClick={(e) => e.target.select()}
-                value={`<a href="${window.location.origin}"><img src="${window.location.origin}/api/badge/${hostname}?score=${score}" alt="ShieldScan Security Rating" /></a>`}
+                value={`<a href="${window.location.origin}"><img src="${window.location.origin || ''}${API_BASE}/badge/${hostname}?score=${score}" alt="ShieldScan Security Rating" /></a>`}
                 style={{
                   width: '100%',
                   padding: '8px 10px',

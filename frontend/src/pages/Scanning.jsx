@@ -49,6 +49,8 @@ function StatusIcon({ s }) {
   return <span className="skeleton" style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%' }} />;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 export default function Scanning({ url, onComplete, onCancel, dark, onToggleDark, onContactClick }) {
   const [statuses, setStatuses] = useState({});
   const [done, setDone]         = useState(0);
@@ -75,7 +77,7 @@ export default function Scanning({ url, onComplete, onCancel, dark, onToggleDark
 
     (async () => {
       try {
-        const res = await fetch('/api/scan', {
+        const res = await fetch(`${API_BASE}/scan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url }),

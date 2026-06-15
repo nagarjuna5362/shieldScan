@@ -8,6 +8,8 @@ import BackgroundGrid from './components/BackgroundGrid';
 import ConsentGate from './components/ConsentGate';
 import ContactModal from './components/ContactModal';
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 export default function App() {
   const [page, setPage] = useState('landing');
   const [scanUrl, setScanUrl] = useState('');
@@ -24,10 +26,10 @@ export default function App() {
   });
   const [dark, setDark] = useState(() => {
     try {
-      return localStorage.getItem('ss-theme') === 'dark';
-    } catch {
-      return false;
-    }
+      const stored = localStorage.getItem('ss-theme');
+      if (stored) return stored === 'dark';
+    } catch {}
+    return true;
   });
 
   useEffect(() => {
@@ -42,7 +44,7 @@ export default function App() {
     const match = path.match(/^\/report\/([a-f0-9-]+)/i);
     if (match) {
       const uuid = match[1];
-      fetch(`/api/reports/${uuid}`)
+      fetch(`${API_BASE}/reports/${uuid}`)
         .then((res) => {
           if (!res.ok) throw new Error('Report not found or expired');
           return res.json();
